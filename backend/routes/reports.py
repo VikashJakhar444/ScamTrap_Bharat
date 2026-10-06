@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from backend.database.db import get_scam_summary, get_db_connection
+from backend.database.db import get_scam_summary, get_db_connection, get_case_evidence
 from backend.services.pdf_dossier import generate_complaint_dossier
 from backend.config import GENERATED_PDFS_DIR
 from pathlib import Path
@@ -12,33 +12,52 @@ router = APIRouter(prefix="/api/reports", tags=["Reports & Analytics"])
 class GeneratePdfRequest(BaseModel):
     case_id: Optional[str] = "CASE-2026-1001"
 
+PENDING_CAPTURE = "Awaiting canary capture"
+
 def _build_case_payload(case_id: str) -> dict:
-    with get_db_connection() as conn:
-        case = conn.execute("SELECT * FROM cases WHERE case_id = ?", (case_id,)).fetchone()
-        msgs = conn.execute("SELECT sender_role, message_text FROM messages WHERE case_id = ? ORDER BY id ASC", (case_id,)).fetchall()
-        canary = conn.execute("SELECT * FROM canary_logs WHERE case_id = ? ORDER BY id DESC LIMIT 1", (case_id,)).fetchone()
-        
+    """Builds the dossier payload from recorded evidence only. Values that have
+    not actually been captured are reported as pending instead of invented."""
+    ev = get_case_evidence(case_id)
+    latest = ev.get("latest_capture") or {}
+
+    def _pick(kind: str) -> Optional[str]:
+        for ident in ev["identifiers"]:
+            if ident["type"] == kind and ident["blacklisted"] is False:
+                return ident["value"]
+        for ident in ev["identifiers"]:
+            if ident["type"] == kind:
+                return ident["value"]
+        return None
+
     return {
         "case_id": case_id,
-        "scammer_phone": case["scammer_phone"] if case else "+91 98765 43210",
-        "scam_category": case["scam_category"] if case else "Electricity Bill Disconnection Scam",
-        "primary_upi": "bijli.board.pay@ybl",
-        "bank_ac": "50200084729104",
-        "ifsc": "SBIN0004821 (State Bank of India)",
-        "ip_address": canary["ip_address"] if canary else "103.21.144.62 (Kolkata Hub / Jamtara Route)",
-        "device_os": canary["device_os"] if canary else "Android 13 (Redmi Note 11)",
-        "browser_ua": canary["browser_ua"] if canary else "Mozilla/5.0 (Linux; Android 13; Chrome Mobile)",
-        "messages": [f"[{m['sender_role'].upper()}]: {m['message_text']}" for m in msgs] if msgs else []
+        "scammer_phone": ev.get("scammer_phone") or "Not recorded",
+        "scam_category": ev.get("scam_category") or "Unclassified",
+        "primary_upi": _pick("UPI") or "Not captured",
+        "bank_ac": _pick("BANK_AC") or "Not captured",
+        "ifsc": _pick("IFSC") or "Not captured",
+        "ip_address": latest.get("ip_address") or PENDING_CAPTURE,
+        "device_os": latest.get("device_os") or PENDING_CAPTURE,
+        "browser_ua": latest.get("browser_ua") or PENDING_CAPTURE,
+        "messages": [f"[{m['sender_role'].upper()}]: {m['message_text']}" for m in ev["messages"]],
     }
+
+@router.get("/case-evidence")
+def get_case_evidence_report(case_id: str = Query(default="CASE-2026-1001")):
+    """Returns the real, recorded evidence bundle for a case: transcript,
+    extracted identifiers cross-checked against the blacklist, and any
+    canary captures logged when the trap link was opened."""
+    ev = get_case_evidence(case_id)
+    if ev.get("status") == "NOT_FOUND":
+        raise HTTPException(status_code=404, detail=f"No case found with id {case_id}")
+    return {"status": "success", "data": ev}
+
 
 @router.get("/summary")
 def get_summary_report():
     """Returns real counts, category breakdowns, and blacklist records from SQLite."""
-    data = get_scam_summary()
-    return {
-        "status": "success",
-        "data": data
-    }
+    return {"status": "success", "data": get_scam_summary()}
+
 
 @router.get("/download-pdf")
 def download_official_pdf(case_id: str = Query(default="CASE-2026-1001")):

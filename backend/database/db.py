@@ -1,5 +1,8 @@
 import sqlite3
 import os
+import re
+import json
+import hashlib
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from backend.config import DB_PATH
@@ -69,7 +72,7 @@ def init_db():
             conn.execute(
                 """
                 INSERT INTO canary_logs (case_id, trap_code, ip_address, device_os, browser_ua)
-                VALUES ('CASE-2026-1001', 'TRAP-EL-991', '103.21.144.62 (Kolkata/Jamtara Region)', 'Android 13 (Redmi Note 11)', 'Chrome Mobile 122.0.6261.94')
+                VALUES ('CASE-2026-1001', 'TRAP-EL-991', '103.60.44.19', 'Android 13 (Redmi Note 11)', 'Chrome Mobile 122.0.6261.94')
                 """
             )
             conn.commit()
@@ -121,6 +124,168 @@ def get_scam_summary() -> Dict[str, Any]:
             "blacklist": [dict(r) for r in blacklist_rows],
             "recent_cases": [dict(r) for r in cases_rows]
         }
+
+def normalize_digits(value: str, last: int = 0) -> str:
+    """Strips formatting. For phone numbers we keep only the last 10 digits so
+    '+91 98765 43210', '09876543210' and '9876543210' all collapse to one key."""
+    digits = re.sub(r"\D", "", value or "")
+    return digits[-last:] if (last and len(digits) > last) else digits
+
+
+def evidence_hash(messages: List[Dict[str, Any]],
+                  captures: List[Dict[str, Any]],
+                  identifiers: List[Dict[str, Any]]) -> str:
+    """SHA-256 over the recorded evidence bundle so the dossier can be checked
+    against tampering. Recomputed on every read — never a fixed string."""
+    payload = json.dumps(
+        {
+            "messages": [
+                {"role": m.get("sender_role"), "text": m.get("message_text"),
+                 "at": str(m.get("timestamp"))}
+                for m in messages
+            ],
+            "captures": [
+                {"ip": c.get("ip_address"), "os": c.get("device_os"),
+                 "ua": c.get("browser_ua"), "trap": c.get("trap_code"),
+                 "at": str(c.get("captured_at"))}
+                for c in captures
+            ],
+            "identifiers": [
+                {"value": i.get("value"), "type": i.get("type"),
+                 "blacklisted": i.get("blacklisted")}
+                for i in identifiers
+            ],
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def get_case_evidence(case_id: str) -> Dict[str, Any]:
+    """Returns everything actually recorded for a case: transcript, canary
+    captures (real request metadata), and any identifiers cross-referenced
+    from the live scam blacklist. Nothing here is hard-coded."""
+    from backend.services.extractor import extract_entities
+
+    with get_db_connection() as conn:
+        case_row = conn.execute("SELECT * FROM cases WHERE case_id = ?", (case_id,)).fetchone()
+        msgs = conn.execute(
+            "SELECT id, sender_role, message_text, timestamp FROM messages WHERE case_id = ? ORDER BY id ASC",
+            (case_id,),
+        ).fetchall()
+        canary_rows = conn.execute(
+            "SELECT trap_code, ip_address, device_os, browser_ua, captured_at "
+            "FROM canary_logs WHERE case_id = ? ORDER BY id DESC",
+            (case_id,),
+        ).fetchall()
+
+    messages = [dict(r) for r in msgs]
+    canary = [dict(r) for r in canary_rows]
+
+    # Derive identifiers from the real transcript + case phone, then look each
+    # one up against the blacklist so risk scores come from the DB.
+    transcript = "\n".join(m["message_text"] for m in messages)
+    source_text = " ".join(filter(None, [transcript, case_row["scammer_phone"] if case_row else ""]))
+    entities = extract_entities(source_text) if source_text.strip() else {}
+
+    def _match(value: str, match_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        with get_db_connection() as conn:
+            if match_type:
+                row = conn.execute(
+                    "SELECT * FROM scam_identifiers WHERE LOWER(identifier_value) = ? AND identifier_type = ?",
+                    (value.lower(), match_type),
+                ).fetchone()
+                if row:
+                    return dict(row)
+            else:
+                row = conn.execute(
+                    "SELECT * FROM scam_identifiers WHERE LOWER(identifier_value) = ?",
+                    (value.lower(),),
+                ).fetchone()
+                if row:
+                    return dict(row)
+
+            # Compare digit-only forms: "+91 98765 43210" vs "9876543210".
+            if match_type == "PHONE":
+                target = normalize_digits(value, last=10)
+                if len(target) == 10:
+                    candidates = conn.execute(
+                        "SELECT * FROM scam_identifiers WHERE identifier_type = 'PHONE'"
+                    ).fetchall()
+                    for cand in candidates:
+                        if normalize_digits(cand["identifier_value"], last=10) == target:
+                            return dict(cand)
+            elif match_type == "BANK_AC":
+                target = normalize_digits(value)
+                if len(target) >= 9:
+                    candidates = conn.execute(
+                        "SELECT * FROM scam_identifiers WHERE identifier_type IN ('BANK_AC', 'IFSC')"
+                    ).fetchall()
+                    for cand in candidates:
+                        if normalize_digits(cand["identifier_value"]) == target:
+                            return dict(cand)
+            elif match_type:
+                row = conn.execute(
+                    "SELECT * FROM scam_identifiers WHERE ? LIKE '%' || identifier_value || '%'",
+                    (value,),
+                ).fetchone()
+                if row:
+                    return dict(row)
+        return None
+
+    identifiers = []
+    seen = set()
+
+    def _push(value: str, match_type: str, label: str) -> None:
+        if not value:
+            return
+        # "+91 98765 43210" and "9876543210" are the same number.
+        if match_type == "PHONE":
+            key = normalize_digits(value, last=10)
+        elif match_type == "BANK_AC":
+            key = normalize_digits(value)
+        else:
+            key = value.lower()
+        if not key or key in seen:
+            return
+        seen.add(key)
+        record = _match(value, match_type)
+        identifiers.append({
+            "value": value,
+            "type": match_type,
+            "label": label,
+            "blacklisted": record is not None,
+            "risk_score": record["risk_score"] if record else None,
+            "scam_category": record["scam_category"] if record else None,
+            "reports_count": record["reports_count"] if record else None,
+        })
+
+    if case_row:
+        _push(case_row["scammer_phone"], "PHONE", "Scammer phone number")
+    for upi in entities.get("upis", []):
+        _push(upi, "UPI", "Primary UPI handle")
+    for phone in entities.get("phones", []):
+        _push(phone, "PHONE", "Phone number in transcript")
+    for bank in entities.get("bank_accounts", []):
+        _push(bank, "BANK_AC", "Backup bank account")
+    for ifsc in entities.get("ifsc_codes", []):
+        _push(ifsc, "IFSC", "IFSC code")
+
+    return {
+        "case_id": case_id,
+        "status": case_row["status"] if case_row else "NOT_FOUND",
+        "scam_category": case_row["scam_category"] if case_row else "Unknown",
+        "scammer_phone": case_row["scammer_phone"] if case_row else None,
+        "created_at": case_row["created_at"] if case_row else None,
+        "messages": messages,
+        "identifiers": identifiers,
+        "canary_captures": canary,
+        "capture_count": len(canary),
+        "latest_capture": canary[0] if canary else None,
+        "evidence_hash": evidence_hash(messages, canary, identifiers),
+    }
+
 
 def lookup_identifier(query: str) -> Optional[Dict[str, Any]]:
     """Finds exact or partial match for an identifier."""

@@ -35,7 +35,17 @@ class WaStatusPayload(BaseModel):
 @router.get("/status")
 @router.get("/wa-status")
 def get_honeypot_status():
-    """Returns 2-phone honeypot connection and node health."""
+    """Returns 2-phone honeypot connection and node health. Totals are counted
+    from the live database rather than hard-coded."""
+    with get_db_connection() as conn:
+        engaged = conn.execute(
+            "SELECT COUNT(DISTINCT case_id) FROM messages WHERE sender_role = 'scammer'"
+        ).fetchone()[0]
+        mules = conn.execute(
+            "SELECT COUNT(*) FROM scam_identifiers WHERE identifier_type = 'BANK_AC'"
+        ).fetchone()[0]
+        trap_count = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]
+
     return {
         "node_status": "CONNECTED" if wa_bridge_state["connected"] else "ONLINE_STANDBY",
         "qr_ready": True,
@@ -44,8 +54,9 @@ def get_honeypot_status():
         "active_persona": wa_bridge_state["persona"],
         "mode": "100% Isolated Local Sandbox",
         "trap_active_numbers": wa_bridge_state["trap_active_numbers"],
-        "scammers_engaged_total": 12,
-        "mules_extracted_total": 9
+        "scammers_engaged_total": engaged,
+        "mules_extracted_total": mules,
+        "active_traps_count": trap_count,
     }
 
 @router.post("/wa-status")
@@ -70,23 +81,29 @@ def toggle_trap_for_number(payload: TrapTogglePayload):
 
 @router.get("/threads")
 def get_scammer_threads():
-    """Returns active threads for Tab 2 UI."""
-    return [
-        {
-            "phone": "+91 98765 43210",
-            "category": "Electricity Bill Scam",
-            "is_trap_active": wa_bridge_state["trap_active_numbers"].get("+91 98765 43210", True),
-            "last_message": "Theek hai is backup account pe transfer karo: A/C 50200084729104",
-            "time": "Just now"
-        },
-        {
-            "phone": "+91 91234 56789",
-            "category": "Bank KYC Fraud",
-            "is_trap_active": wa_bridge_state["trap_active_numbers"].get("+91 91234 56789", False),
-            "last_message": "Send Rs 100 on sbi.kyc.update@okaxis to unlock YONO",
-            "time": "12m ago"
-        }
-    ]
+    """Returns active threads for Tab 2 UI, built from stored cases and their
+    most recent message."""
+    with get_db_connection() as conn:
+        cases = conn.execute(
+            "SELECT case_id, scammer_phone, scam_category, status FROM cases ORDER BY created_at DESC"
+        ).fetchall()
+        threads = []
+        for case in cases:
+            last = conn.execute(
+                "SELECT message_text, timestamp FROM messages WHERE case_id = ? AND sender_role != 'system' ORDER BY id DESC LIMIT 1",
+                (case["case_id"],),
+            ).fetchone()
+            threads.append({
+                "case_id": case["case_id"],
+                "phone": case["scammer_phone"],
+                "category": case["scam_category"],
+                "is_trap_active": wa_bridge_state["trap_active_numbers"].get(
+                    case["scammer_phone"], case["status"] != "STANDBY"
+                ),
+                "last_message": last["message_text"] if last else "No messages yet",
+                "time": last["timestamp"] if last else case["status"],
+            })
+    return threads
 
 @router.post("/send-message")
 @router.post("/incoming")

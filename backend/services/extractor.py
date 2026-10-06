@@ -42,6 +42,20 @@ def extract_entities(text: str) -> Dict[str, Any]:
     
     # IFSC
     found_ifsc = list(set(IFSC_PATTERN.findall(text)))
+
+    # Bank account numbers (9-18 digits) excluding phone numbers, years and IFSC leftovers
+    phone_set = set(cleaned_phones)
+    found_accounts = []
+    for raw in BANK_AC_PATTERN.findall(text):
+        digits = raw.strip()
+        if len(digits) < 9 or len(digits) > 18:
+            continue
+        if digits in phone_set:
+            continue
+        if digits.upper() in {f.upper() for f in found_ifsc}:
+            continue
+        if digits not in found_accounts:
+            found_accounts.append(digits)
     
     # Category detection
     text_lower = text.lower()
@@ -68,6 +82,9 @@ def extract_entities(text: str) -> Dict[str, Any]:
     if found_ifsc:
         risk_score += 30
         reasons.append("Contains Bank IFSC Code")
+    if found_accounts:
+        risk_score += 35
+        reasons.append(f"Contains {len(found_accounts)} Bank Account Number(s)")
     if matched_categories:
         risk_score += 40
         reasons.append(f"Matches high-risk fraud pattern: {', '.join(matched_categories)}")
@@ -78,8 +95,35 @@ def extract_entities(text: str) -> Dict[str, Any]:
         "upis": found_upis,
         "phones": cleaned_phones,
         "ifsc_codes": found_ifsc,
+        "bank_accounts": found_accounts,
         "detected_category": primary_category,
         "matched_categories": matched_categories,
         "heuristic_risk_score": risk_score,
         "reasons": reasons
-    }
+}
+
+# Hindi labels for every category the engine or the seeded registry can emit.
+CATEGORY_LABELS_HI = {
+    "Electricity Bill": "बिजली बिल धोखाधड़ी",
+    "Bank KYC": "बैंक KYC धोखाधड़ी",
+    "Fake Loan": "नकली लोन धोखाधड़ी",
+    "Job Scam": "नौकरी धोखाधड़ी",
+    "Part-Time Task": "पार्ट-टाइम टास्क धोखाधड़ी",
+    "Electricity Bill Disconnection": "बिजली बिल कनेक्शन कटौती धोखाधड़ी",
+    "Bank KYC & Account Block": "बैंक KYC व खाता ब्लॉक धोखाधड़ी",
+    "Fake Police & Digital Arrest": "नकली पुलिस व डिजिटल अरेस्ट धोखाधड़ी",
+    "Part-Time Job / Telegram Task": "पार्ट-टाइम जॉब / टेलीग्राम टास्क धोखाधड़ी",
+    "Fake Lottery / Loan Approval": "नकली लॉटरी / लोन स्वीकृति धोखाधड़ी",
+    "General Suspicious": "सामान्य संदिग्ध गतिविधि",
+    "Suspicious Alert": "संदिग्ध चेतावनी",
+    "Identified Scam": "पहचाना गया स्कैम",
+    "No Direct Threat Found": "कोई सीधा खतरा नहीं मिला",
+    "None": "कुछ नहीं",
+}
+
+
+def localize_category(category: str, lang: str) -> str:
+    """Maps an English category label to Hindi when requested."""
+    if lang != "hi":
+        return category
+    return CATEGORY_LABELS_HI.get(category, category)
