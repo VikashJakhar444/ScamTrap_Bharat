@@ -1,0 +1,22 @@
+{
+  "name": "scamtrap-wa-bridge",
+  "version": "1.0.0",
+  "description": "ScamTrap Bharat WhatsApp Node Bridge for 2-Phone Autonomous Honeypot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0",
+    "axios": "^1.6.8"
+  },
+  "keywords": [
+    "scamtrap",
+    "honeypot",
+    "whatsapp",
+    "cyber-safety"
+  ],
+  "author": "ScamTrap Bharat Team",
+  "license": "MIT"
+}

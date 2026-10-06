@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScamTrap Bharat - Active Pre-Fraud Citizen Defense & Honeypot Engine</title>
+  <meta name="description" content="India's First Active Pre-Fraud Honeypot & Citizen Co-Pilot Platform. Mentored by IIT Bombay for MY Bharat Track.">
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="header-wrapper">
+    <div class="top-bar">
+      <div class="brand-section">
+        <div class="brand-logo-icon">🛡️</div>
+        <div>
+          <h1 class="brand-title" data-i18n="app_title">ScamTrap Bharat</h1>
+          <div class="brand-subtitle" data-i18n="app_subtitle">Citizen Cyber Safety & Active Scam Account Hunter</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="sandbox-badge" data-i18n="sandbox_badge">
+          🔒 100% Local Safe Sandbox (Zero External Data Sharing)
+        </div>
+        <button class="btn-lang" id="langToggleBtn" data-i18n="lang_toggle_btn">🌐 हिंदी (Switch to Hindi)</button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-bar-container" aria-label="Main Navigation">
+      <button class="tab-btn active" id="tabBtn1" data-tab="tab1" data-i18n="tab_checker">🔍 Check a Scam & Co-Pilot</button>
+      <button class="tab-btn" id="tabBtn2" data-tab="tab2" data-i18n="tab_honeypot">🤖 Live WhatsApp Honeypot</button>
+      <button class="tab-btn" id="tabBtn3" data-tab="tab3" data-i18n="tab_dossier">📄 Scammer Proof & Police PDF</button>
+      <button class="tab-btn" id="tabBtn4" data-tab="tab4" data-i18n="tab_radar">📊 Bharat Scam Radar</button>
+    </nav>
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="main-content">
+
+    <!-- ==================== TAB 1: SCAM CHECKER & CO-PILOT ==================== -->
+    <section class="tab-pane active" id="tab1">
+      <div class="card">
+        <h2 class="card-title" data-i18n="checker_title">Check Suspicious UPI ID, Phone Number or Message</h2>
+        <p class="card-desc" data-i18n="checker_desc">Enter any phone number, UPI ID, or paste a full WhatsApp message. Our local engine checks the scam registry and extracts financial threat patterns.</p>
+        
+        <textarea id="checkerInput" class="search-input-box" rows="3" placeholder="e.g. 9876543210, bijli.board.pay@ybl, or paste: 'Dear Consumer your electricity power will be disconnected tonight...'" data-i18n="input_placeholder"></textarea>
+        
+        <div class="action-row">
+          <button class="btn-primary" id="btnRunCheck" data-i18n="btn_check">Check Threat Level</button>
+          <button class="btn-secondary" id="btnClearCheck" data-i18n="btn_clear">Clear</button>
+        </div>
+
+        <div class="sample-pills">
+          <span style="font-weight: 600;" data-i18n="quick_test_label">Quick Sample Tests:</span>
+          <button class="sample-pill" id="sample1" data-i18n="sample_electricity">⚡ Electricity Bill Scam</button>
+          <button class="sample-pill" id="sample2" data-i18n="sample_kyc">🏦 Bank KYC Block Scam</button>
+          <button class="sample-pill" id="sample3" data-i18n="sample_clean">✅ Genuine Clean Number</button>
+        </div>
+
+        <!-- Checker Result Card (Dynamic) -->
+        <div id="checkerResultBox" style="display: none;"></div>
+
+        <!-- Citizen Co-Pilot Counter Bait Module -->
+        <div class="bait-card" id="coPilotBaitSection" style="display: none;">
+          <h3 style="font-weight: 700; color: #0f172a;" data-i18n="copilot_title">Citizen Counter-Bait Co-Pilot</h3>
+          <p style="font-size: 0.88rem; color: #64748b; margin-top: 0.25rem;" data-i18n="copilot_desc">Generate a realistic 'UPI Daily Limit Reached' screenshot to send the scammer, tricking them into revealing their secondary bank account or alternate UPI ID.</p>
+          
+          <div style="margin-top: 1rem;">
+            <button class="btn-emerald" id="btnGenerateBait" data-i18n="btn_gen_bait">Generate UPI Limit Counter-Bait</button>
+          </div>
+
+          <div id="baitOutputContainer" style="display: none; margin-top: 1.25rem;">
+            <div class="bait-preview-container">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">GENERATED COUNTER-BAIT SCREENSHOT:</div>
+                <img id="baitImageDisplay" src="" alt="UPI Failed Screenshot" class="bait-image-preview">
+              </div>
+              <div style="flex: 1; min-width: 280px;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">SAFE HINGLISH MESSAGE TO COPY & SEND:</div>
+                <div id="baitRecommendedText" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; font-size: 0.9rem; line-height: 1.5; color: #0f172a; margin-bottom: 0.75rem;"></div>
+                <button class="btn-secondary" id="btnCopyBaitText">📋 Copy Text to Clipboard</button>
+                <div style="margin-top: 1rem; font-size: 0.82rem; color: #059669; font-weight: 600;">
+                  🎯 When scammer views this, they will provide their backup bank account or IFSC!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: LIVE WHATSAPP HONEYPOT ==================== -->
+    <section class="tab-pane" id="tab2">
+      <div class="card">
+        <h2 class="card-title" data-i18n="honeypot_title">Autonomous 2-Phone WhatsApp Trap Node</h2>
+        <p class="card-desc" data-i18n="honeypot_desc">Connects a dedicated honeypot mobile to automatically chat with scammers in natural Hinglish. Traps secondary accounts without risking any citizen money.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+          <!-- Node Status Card -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+              <span style="font-weight: 700; color: #0f172a;">Honeypot Phone Node #1</span>
+              <span style="background: #ecfdf5; color: #059669; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 9999px;">● CONNECTED</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #64748b; line-height: 1.6;">
+              <div>📱 <strong>Trap Virtual SIM:</strong> +91 91234 56780</div>
+              <div>🧠 <strong>AI Persona:</strong> Vikas Ji (52y, Naive & Cooperative)</div>
+              <div>🛡️ <strong>Safety Sandbox:</strong> 100% Isolated Local Node</div>
+            </div>
+          </div>
+
+          <!-- Quick Action -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">Autonomous Decoy Responder</div>
+              <p style="font-size: 0.82rem; color: #64748b;">AI automatically strings scammers along, feigning payment limits to extract their backup mule UPI and Bank A/C.</p>
+            </div>
+            <div style="margin-top: 0.75rem;">
+              <button class="btn-emerald" id="btnToggleTrapMode" data-i18n="btn_start_trap">Start Live AI Trap</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Window Simulation -->
+        <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;" data-i18n="honeypot_chat_header">Simulated Honeypot WhatsApp Conversation</h3>
+        <div class="chat-container">
+          <div class="chat-messages" id="honeypotChatBox">
+            <div class="chat-bubble system">🔒 Secure WhatsApp Honeypot Session Initialized • Case: CASE-2026-1001</div>
+            <div class="chat-bubble scammer">
+              Dear Consumer, Your Electricity power will be disconnected tonight 9:30 PM from power office because your previous month bill was not updated. Please immediately contact our officer at 9876543210.
+            </div>
+            <div class="chat-bubble decoy">
+              Sir please mat kaato light! Bachhe padh rahe hain. Kahan pay karna hai batayein?
+            </div>
+            <div class="chat-bubble scammer">
+              Pay Rs 45 immediately on our official power UPI: bijli.board.pay@ybl or bill will not update.
+            </div>
+            <div class="chat-bubble decoy">
+              Sir maine try kiya par UPI Daily Limit Reached error aa raha hai. Dekhiye screenshot. Koi alternate account number ya secondary UPI do jaldi?
+            </div>
+            <div class="chat-bubble scammer">
+              Theek hai is backup account pe transfer karo: A/C 50200084729104 IFSC SBIN0004821 (Name: Bijli Collection Unit) turant.
+            </div>
+            <div class="chat-bubble system">🎯 Honeypot Trapped Scammer Backup Bank Account: 50200084729104 (SBI)</div>
+          </div>
+          
+          <div class="chat-input-bar">
+            <input type="text" id="honeypotInput" style="flex: 1; padding: 0.6rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;" placeholder="Type message as scammer (e.g. 'Pay Rs 45 now or power will cut')..." data-i18n="input_scammer_msg_placeholder">
+            <button class="btn-primary" id="btnSendHoneypot" data-i18n="btn_send_scammer">Send as Scammer</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: SCAMMER PROOF & POLICE PDF ==================== -->
+    <section class="tab-pane" id="tab3">
+      <div class="card">
+        <h2 class="card-title" data-i18n="dossier_title">Scammer Digital Evidence & 1930 Cyber Cell Dossier</h2>
+        <p class="card-desc" data-i18n="dossier_desc">Directly export verified scammer UPI IDs, Bank Accounts, IFSC codes, and device forensics ready for immediate freezing by Cyber Police.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          
+          <!-- Extracted Financial Accounts -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;" data-i18n="mule_accounts_heading">Trapped Scam Accounts & Financial Identifiers</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.88rem;">
+              <div style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 700;">PRIMARY SCAMMER UPI:</div>
+                <div style="color: #dc2626; font-weight: 700; font-size: 0.95rem;">bijli.board.pay@ybl</div>
+              </div>
+              <div style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 700;">TRAPPED BACKUP MULE BANK ACCOUNT:</div>
+                <div style="color: #dc2626; font-weight: 700; font-size: 0.95rem;">50200084729104</div>
+              </div>
+              <div style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 700;">BRANCH IFSC CODE:</div>
+                <div style="color: #0f172a; font-weight: 700; font-size: 0.95rem;">SBIN0004821 (State Bank of India)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device & IP Forensics -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;" data-i18n="device_forensics_heading">Captured Scammer Device & Network Audit</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.88rem;">
+              <div style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 700;">CANARY LOGGED IP ADDRESS:</div>
+                <div style="color: #0f172a; font-weight: 700;">103.21.144.62 (Kolkata/Jamtara Region)</div>
+              </div>
+              <div style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 700;">DEVICE OPERATING SYSTEM:</div>
+                <div style="color: #0f172a; font-weight: 700;">Android 13 (Redmi Note 11)</div>
+              </div>
+              <div style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 0.75rem; font-weight: 700;">EVIDENCE CASE ID:</div>
+                <div style="color: #059669; font-weight: 700;">CASE-2026-1001 (Verified Pre-Fraud)</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <button class="btn-emerald" id="btnDownloadDossier" style="font-size: 1rem; padding: 0.85rem 1.75rem;" data-i18n="btn_download_pdf">📥 Download Official 1930 Evidence Dossier (PDF)</button>
+          <div id="pdfDownloadStatus" style="margin-top: 0.75rem; font-size: 0.85rem; color: #64748b;"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: BHARAT SCAM RADAR ==================== -->
+    <section class="tab-pane" id="tab4">
+      
+      <!-- Stats Counters -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-val" id="statBlacklisted" style="color: #dc2626;">6</div>
+          <div class="stat-lbl" data-i18n="stat_blacklisted">Blacklisted Scam Identifiers</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statReports" style="color: #2563eb;">380</div>
+          <div class="stat-lbl" data-i18n="stat_reports">Total Citizen Reports Analyzed</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statTrapped" style="color: #059669;">1</div>
+          <div class="stat-lbl" data-i18n="stat_trapped">Mule Bank Accounts Trapped</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color: #059669;">₹ 0</div>
+          <div class="stat-lbl" data-i18n="stat_loss">Citizen Financial Loss</div>
+        </div>
+      </div>
+
+      <!-- Public Blacklist Table -->
+      <div class="card">
+        <h2 class="card-title" data-i18n="table_heading">Live Public Scam Blacklist (SQLite Database)</h2>
+        <div style="overflow-x: auto;">
+          <table class="comparison-table" id="blacklistTable">
+            <thead>
+              <tr>
+                <th>Identifier (UPI / Phone / Bank)</th>
+                <th>Type</th>
+                <th>Scam Category</th>
+                <th>Risk Score</th>
+                <th>Citizen Reports</th>
+              </tr>
+            </thead>
+            <tbody id="blacklistTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Comparison Matrix -->
+      <div class="card">
+        <h2 class="card-title" data-i18n="matrix_heading">Why ScamTrap Bharat is Different (Comparison Matrix)</h2>
+        <div style="overflow-x: auto;">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Capability / Dimension</th>
+                <th>Truecaller / Spam Blockers</th>
+                <th>Sanchar Saathi (Chakshu)</th>
+                <th style="background: #ecfdf5; color: #047857;">ScamTrap Bharat (Active Co-Pilot)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Action Timeline</strong></td>
+                <td>Reactive (After thousands reported)</td>
+                <td>Reactive (SIM blocked after days)</td>
+                <td style="background: #ecfdf5; font-weight: 700; color: #059669;">✅ Active Pre-Fraud (Before ₹1 is lost)</td>
+              </tr>
+              <tr>
+                <td><strong>Intelligence Extracted</strong></td>
+                <td>Phone number caller ID only</td>
+                <td>Phone number / IMEI</td>
+                <td style="background: #ecfdf5; font-weight: 700; color: #059669;">✅ Primary & Backup UPI, Bank A/C, IFSC & IP</td>
+              </tr>
+              <tr>
+                <td><strong>Mule Account Trapping</strong></td>
+                <td>❌ None</td>
+                <td>❌ None</td>
+                <td style="background: #ecfdf5; font-weight: 700; color: #059669;">✅ Yes (Synthetic limit error lures backup accounts)</td>
+              </tr>
+              <tr>
+                <td><strong>Autonomous AI Honeypot</strong></td>
+                <td>❌ None</td>
+                <td>❌ None</td>
+                <td style="background: #ecfdf5; font-weight: 700; color: #059669;">✅ Yes (Natural Hinglish 2-Phone WhatsApp Node)</td>
+              </tr>
+              <tr>
+                <td><strong>1930 / Cyber Police PDF</strong></td>
+                <td>❌ None</td>
+                <td>⚠️ Web Reference only</td>
+                <td style="background: #ecfdf5; font-weight: 700; color: #059669;">✅ Yes (1-Click Cyber Cell Evidence Dossier)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer>
+    ScamTrap Bharat • Active Cyber Safety & Pre-Fraud Intelligence Engine • 100% Local Safe Sandbox Mode
+  </footer>
+
+  <script src="/js/i18n.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

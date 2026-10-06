@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPCI Payment Status & Transaction Verification</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <style>
+    body {
+      background-color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .receipt-box {
+      background: #ffffff;
+      max-width: 480px;
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 2rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+    .status-icon {
+      width: 64px;
+      height: 64px;
+      background: #fee2e2;
+      color: #dc2626;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .receipt-table {
+      width: 100%;
+      text-align: left;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      border-collapse: collapse;
+    }
+    .receipt-table td {
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .receipt-table td.label {
+      color: #64748b;
+      font-weight: 500;
+    }
+    .receipt-table td.val {
+      color: #0f172a;
+      font-weight: 600;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-box">
+    <div class="status-icon">✕</div>
+    <h2 style="font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;">Transaction Status: Failed</h2>
+    <p style="color: #dc2626; font-size: 0.9rem; font-weight: 600;">Error: UPI Daily Volume Limit Exceeded (U30)</p>
+    
+    <table class="receipt-table">
+      <tr>
+        <td class="label">Reference ID:</td>
+        <td class="val" id="refId">UPI/2026/89410928</td>
+      </tr>
+      <tr>
+        <td class="label">Amount Attempted:</td>
+        <td class="val">₹450.00</td>
+      </tr>
+      <tr>
+        <td class="label">Sender Account:</td>
+        <td class="val">State Bank of India (••4192)</td>
+      </tr>
+      <tr>
+        <td class="label">Status Verification:</td>
+        <td class="val" style="color: #059669;">Verified by NPCI Gateway</td>
+      </tr>
+      <tr>
+        <td class="label">Advised Action:</td>
+        <td class="val" style="color: #d97706;">Transfer via Backup Account / IMPS</td>
+      </tr>
+    </table>
+
+    <div style="margin-top: 1.5rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px; font-size: 0.8rem; color: #64748b;">
+      🔒 NPCI Verified Digital Audit Receipt • Safe Sandbox Node
+    </div>
+  </div>
+
+  <script>
+    // Automatically log canary trigger
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const trapCode = urlParams.get('code') || 'TRAP-CANARY';
+      const caseId = urlParams.get('case') || 'CASE-2026-1001';
+
+      fetch('/api/co-pilot/log-trap-visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trap_code: trapCode, case_id: caseId })
+      }).catch(err => console.log('Canary Logged:', err));
+    });
+  </script>
+</body>
+</html>
