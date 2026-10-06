@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScamTrap Bharat - Citizen Cyber Safety & Scam Account Hunter</title>
+  <title>ScamTrap Bharat - National Citizen Cyber Defense & Pre-Fraud Interception Portal</title>
   <meta name="description" content="India's First Active Pre-Fraud Honeypot & Citizen Co-Pilot Platform. Mentored by IIT Bombay for MY Bharat Track.">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
@@ -18,7 +18,7 @@
         <div class="brand-icon-box">🛡️</div>
         <div>
           <h1 class="brand-title" data-i18n="app_title">ScamTrap Bharat</h1>
-          <div class="brand-subtitle" data-i18n="app_subtitle">Citizen Cyber Safety & Scam Account Hunter</div>
+          <div class="brand-subtitle" data-i18n="app_subtitle">National Citizen Cyber Defense & Pre-Fraud Interception Portal</div>
         </div>
       </div>
 
@@ -32,8 +32,9 @@
 
       <!-- Right Badges & Controls -->
       <div class="header-right-actions">
-        <div class="sandbox-pill" title="All data stays on your laptop. No real police report is sent automatically." data-i18n="sandbox_badge">
-          🔒 Safe Sandbox Mode
+        <div class="sandbox-pill" title="All data stays on your local machine. No real police report is sent automatically.">
+          <span class="pulse-dot"></span>
+          <span data-i18n="sandbox_badge">Local Safe Sandbox (100% Offline Integrity)</span>
         </div>
         <button class="btn-lang-toggle" id="lang-toggle-btn" data-i18n="lang_toggle_btn">🌐 हिंदी में देखें</button>
       </div>
@@ -52,7 +53,7 @@
         <div class="col-7">
           <div class="card-box">
             <h2 class="card-h2" data-i18n="card1_heading">Check Any Suspicious Message, UPI ID, or Phone Number</h2>
-            <p class="card-desc" data-i18n="card1_desc">Check suspicious payments before sending ₹1. Our active engine verifies known scam records and analyzes financial threat patterns.</p>
+            <p class="card-desc" data-i18n="card1_desc">Verify suspicious payment demands before sending ₹1. Our active engine cross-references verified scam registries and analyzes financial threat patterns.</p>
 
             <!-- Section A: Quick Search -->
             <div>
@@ -69,20 +70,25 @@
 
             <div style="margin: 24px 0; border-bottom: 1px solid #E2E8F0;"></div>
 
-            <!-- Section B: Paste Message / Screenshot -->
+            <!-- Section B: Paste Message / Dropzone -->
             <div>
               <label for="scam-msg-input" class="input-label" data-i18n="paste_msg_label">Paste a Suspicious WhatsApp / SMS Message</label>
-              <textarea id="scam-msg-input" class="input-control" rows="4" placeholder="Paste the message asking for urgent payment, KYC update, or electricity bill..." data-i18n="paste_msg_placeholder"></textarea>
+              <textarea id="scam-msg-input" class="input-control" rows="3" placeholder="Paste the message asking for urgent payment, KYC update, or electricity bill..." data-i18n="paste_msg_placeholder"></textarea>
               
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; gap: 10px; flex-wrap: wrap;">
-                <label class="btn-secondary-white" style="cursor: pointer;">
-                  <span data-i18n="attach_screenshot_btn">📷 Attach Scam Screenshot (Optional)</span>
-                  <input type="file" id="scam-img-input" accept="image/*" style="display: none;">
-                </label>
-                <button class="btn-secondary-white" id="btn-clear-tab1" style="margin-left: auto;">Clear</button>
+              <!-- Clean Screenshot Dropzone -->
+              <div class="dropzone-box" id="dropzone-box">
+                <div style="font-size: 13px; font-weight: 600; color: #475569;">
+                  📷 Drag & Drop Scam Screenshot (Optional) or <span style="color: #2563EB; text-decoration: underline;">Browse File</span>
+                </div>
+                <input type="file" id="scam-img-input" accept="image/*" style="display: none;">
+                <div id="dropzone-filename" style="display: none; margin-top: 6px; font-size: 12px; color: #059669; font-weight: 700;"></div>
               </div>
 
-              <div style="margin-top: 14px;">
+              <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                <button class="btn-secondary-white" id="btn-clear-tab1" style="padding: 6px 12px; font-size: 13px;">Clear</button>
+              </div>
+
+              <div style="margin-top: 12px;">
                 <button class="btn-primary-blue" id="analyze-msg-btn" style="width: 100%;" data-i18n="btn_analyze_msg">🛡️ Check If This Is a Scam</button>
               </div>
             </div>
@@ -97,27 +103,37 @@
             
             <!-- Default Placeholder State -->
             <div id="result-placeholder" style="padding: 40px 20px; text-align: center; color: #64748B; background: #F8FAFC; border-radius: 8px; border: 1px dashed #CBD5E1;">
-              <div style="font-size: 32px; margin-bottom: 8px;">🛡️</div>
-              <p style="font-size: 14px; font-weight: 600;" data-i18n="placeholder_result">Enter a UPI ID or message on the left to check its safety.</p>
+              <div style="font-size: 36px; margin-bottom: 8px;">🛡️</div>
+              <p style="font-size: 14px; font-weight: 600;" data-i18n="placeholder_result">Enter a UPI ID or message on the left to check its threat level.</p>
             </div>
 
             <!-- Dynamic Result Content -->
             <div id="result-active-content" style="display: none;">
               
-              <!-- Risk Banner -->
-              <div id="risk-banner-box" class="alert-box-danger">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-weight: 800; font-size: 15px; color: #DC2626;" id="risk-banner-title">🚨 98% Scam Risk — Electricity Bill Fraud</span>
-                  <span class="badge-mono badge-mono-red" id="risk-score-pill">HIGH RISK</span>
+              <!-- SVG Radial Gauge & Risk Score -->
+              <div class="gauge-wrapper">
+                <svg class="radial-progress-svg" viewBox="0 0 80 80">
+                  <circle class="radial-bg-circle" cx="40" cy="40" r="35"></circle>
+                  <circle class="radial-val-circle" id="radial-gauge-circle" cx="40" cy="40" r="35"></circle>
+                </svg>
+                <div>
+                  <div style="font-size: 22px; font-weight: 800; color: #DC2626;" id="gauge-score-text">98%</div>
+                  <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scam Risk Rating</div>
                 </div>
-                <p style="font-size: 13px; color: #7F1D1D; margin-top: 6px; line-height: 1.4;" id="risk-banner-guidance">
+                <span class="badge-mono badge-mono-red" id="risk-score-pill" style="margin-left: auto;">CONFIRMED SCAM</span>
+              </div>
+
+              <!-- Risk Banner Guidance -->
+              <div id="risk-banner-box" class="alert-box-danger">
+                <div style="font-weight: 800; font-size: 14px; color: #DC2626;" id="risk-banner-title">🚨 Identified Threat: Electricity Bill Fraud</div>
+                <p style="font-size: 13px; color: #7F1D1D; margin-top: 4px; line-height: 1.4;" id="risk-banner-guidance">
                   DO NOT send money or click links. This account is flagged in the cyber scam registry.
                 </p>
               </div>
 
               <!-- Extracted Scammer Details List -->
-              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px;">EXTRACTED SCAMMER DETAILS:</div>
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+                <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">EXTRACTED SCAMMER DETAILS:</div>
                 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
                   <div>UPI ID Found: <span class="badge-mono badge-mono-red" id="ext-upi-val">bijli.board.pay@ybl</span></div>
                   <div>Phone Number: <span class="badge-mono badge-mono-blue" id="ext-phone-val">+91 98765 43210</span></div>
@@ -128,15 +144,22 @@
               <!-- Citizen Co-Pilot Action Box -->
               <div class="alert-box-copilot">
                 <div style="font-weight: 800; font-size: 14px; color: #1E3A8A; margin-bottom: 4px;" data-i18n="copilot_box_heading">💡 Want to Expose Their Backup Bank Account Safely?</div>
-                <p style="font-size: 12.5px; color: #1E40AF; line-height: 1.4; margin-bottom: 12px;" data-i18n="copilot_box_desc">
-                  Generate a realistic 'UPI Daily Limit Reached' error screenshot for this UPI ID. When you send this to the scammer, they greedily share their 2nd backup bank account!
+                <p style="font-size: 12.5px; color: #1E40AF; line-height: 1.4; margin-bottom: 10px;" data-i18n="copilot_box_desc">
+                  Generate a realistic 'NPCI U16 UPI Daily Limit Reached' error screenshot. When sent to the scammer, they greedily reveal their secondary backup bank account!
                 </p>
+
+                <!-- Amount Customizer -->
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                  <span style="font-size: 12px; font-weight: 700; color: #1E40AF;">Bait Amount:</span>
+                  <input type="text" id="custom-bait-amt" class="input-control" style="padding: 6px 10px; font-size: 13px; width: 110px;" value="25,000">
+                </div>
+
                 <button class="btn-emerald" id="btn-generate-bait" style="width: 100%; margin-bottom: 8px;" data-i18n="btn_gen_bait">📸 Generate Fake 'Payment Failed' Screenshot</button>
                 <button class="btn-navy" id="btn-send-to-honeypot" style="width: 100%;" data-i18n="btn_send_honeypot">🤖 Hand Over to Live AI Honeypot (Tab 2)</button>
               </div>
 
               <!-- Generated Bait Preview Box -->
-              <div id="bait-preview-modal" style="display: none; margin-top: 16px; background: #FFFFFF; border: 1.5px dashed #059669; border-radius: 10px; padding: 14px;">
+              <div id="bait-preview-modal" style="display: none; margin-top: 14px; background: #FFFFFF; border: 1.5px dashed #059669; border-radius: 10px; padding: 14px;">
                 <div style="font-size: 13px; font-weight: 700; color: #059669; margin-bottom: 8px;">🎯 GENERATED NPCI COUNTER-BAIT RECEIPT:</div>
                 <div style="text-align: center; margin-bottom: 10px;">
                   <img id="bait-receipt-img" src="" alt="Payment Failed Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid #CBD5E1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -168,8 +191,9 @@
           <!-- Card A: WhatsApp Node Connection -->
           <div class="card-box" style="padding: 18px; margin-bottom: 16px;">
             <h3 class="card-h3" data-i18n="wa_conn_title">WhatsApp Node Connection</h3>
-            <div class="sandbox-pill" id="wa-conn-badge" style="width: 100%; justify-content: center; margin-bottom: 12px; background: #ECFDF5; color: #059669;" data-i18n="wa_status_standby">
-              🟢 Connected: +91 91234 56780
+            <div class="sandbox-pill" id="wa-conn-badge" style="width: 100%; justify-content: center; margin-bottom: 12px; background: #ECFDF5; color: #059669;">
+              <span class="pulse-dot"></span>
+              <span>🟢 Connected: +91 91234 56780</span>
             </div>
             
             <div id="wa-qr-box" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 10px;">
@@ -204,7 +228,7 @@
             </div>
 
             <div style="margin-top: 16px; padding: 10px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; font-size: 12px; color: #1E40AF; line-height: 1.4;" data-i18n="wa_tip">
-              💡 Tip: On Phone 1, you can also type 'trap' in your 'Message Yourself' chat to activate the AI on the latest scammer!
+              💡 Tip: On Phone 1, you can also text 'trap' to yourself to activate the AI on the latest scammer!
             </div>
 
           </div>
@@ -217,11 +241,16 @@
             
             <!-- Chat Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #E2E8F0; margin-bottom: 12px;">
-              <div>
-                <div style="font-size: 15px; font-weight: 800; color: #075E54;" data-i18n="chat_header_title">Live WhatsApp Conversation</div>
-                <div style="font-size: 12px; color: #059669; font-weight: 600;" data-i18n="chat_status_decoy">🤖 AI Decoy Replying Automatically</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #075E54; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
+                  🛡️
+                </div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 800; color: #075E54;" data-i18n="chat_header_title">Citizen Decoy Node (Active)</div>
+                  <div style="font-size: 11.5px; color: #059669; font-weight: 600;" id="chat-online-status" data-i18n="chat_status_decoy">● Online • AI Decoy Active</div>
+                </div>
               </div>
-              <button class="btn-secondary-white" id="btn-reset-chat" style="padding: 6px 10px; font-size: 12px;" data-i18n="btn_reset_chat">🔄 Reset Chat</button>
+              <button class="btn-secondary-white" id="btn-reset-chat" style="padding: 5px 9px; font-size: 12px;" data-i18n="btn_reset_chat">🔄 Reset</button>
             </div>
 
             <!-- Chat Canvas -->
@@ -249,11 +278,11 @@
               <!-- Simulation & Input Bar -->
               <div style="background: #FFFFFF; border-top: 1px solid #CBD5E1; padding: 10px;">
                 <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-                  <button class="btn-secondary-white" id="btn-sim-scam-msg" style="flex: 1; font-size: 12px; padding: 6px;" data-i18n="btn_send_msg_1st_upi">Send Scam Msg + 1st UPI</button>
-                  <button class="btn-secondary-white" id="btn-sim-bank-msg" style="flex: 1; font-size: 12px; padding: 6px;" data-i18n="btn_send_2nd_bank">Send 2nd Backup Bank A/C</button>
+                  <button class="btn-secondary-white" id="btn-sim-scam-msg" style="flex: 1; font-size: 11.5px; padding: 5px 8px;" data-i18n="btn_send_msg_1st_upi">⚡ Electricity Threat + UPI</button>
+                  <button class="btn-secondary-white" id="btn-sim-bank-msg" style="flex: 1; font-size: 11.5px; padding: 5px 8px;" data-i18n="btn_send_2nd_bank">🏦 2nd Backup Bank A/C</button>
                 </div>
                 <div style="display: flex; gap: 6px;">
-                  <input type="text" id="manual-scammer-input" class="input-control" style="padding: 8px 12px; font-size: 13px;" placeholder="Type custom scammer reply to test AI...">
+                  <input type="text" id="manual-scammer-input" class="input-control" style="padding: 8px 12px; font-size: 13px;" placeholder="Type custom scammer message to test AI...">
                   <button class="btn-primary-blue" id="btn-send-manual-msg" style="padding: 8px 14px; font-size: 13px;">Send</button>
                 </div>
               </div>
@@ -270,9 +299,9 @@
           <div class="card-box" style="padding: 18px; margin-bottom: 16px;">
             <h3 class="card-h3">Step-by-Step Trap Progress</h3>
             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 600; margin-top: 10px;">
-              <div style="color: #059669;">✅ 1. Scam Message Intercepted</div>
+              <div style="color: #059669;">✅ 1. Scam Demand Intercepted</div>
               <div style="color: #059669;">✅ 2. Primary UPI ID Extracted (bijli.board.pay@ybl)</div>
-              <div style="color: #059669;">✅ 3. Fake Payment Failed Screenshot Sent</div>
+              <div style="color: #059669;">✅ 3. Fake U16 Limit Error Screenshot Sent</div>
               <div style="color: #059669;">✅ 4. Backup Bank A/C Captured (50200084729104)</div>
             </div>
           </div>
@@ -312,7 +341,7 @@
     <section class="tab-content-pane" id="tab-proof">
       
       <!-- Top Action Banner -->
-      <div style="background: #1E3A8A; color: #FFFFFF; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div style="background: #0F2C59; color: #FFFFFF; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
         <div>
           <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.01em;" data-i18n="tab3_banner_title">Official Cybercrime Complaint Evidence File (NCRP 1930 Format)</div>
           <div style="font-size: 13px; opacity: 0.9; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
@@ -407,7 +436,7 @@
       <!-- Row 1: 4 KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-val" style="color: #1E3A8A;" id="kpi-attempts">380</div>
+          <div class="kpi-val" style="color: #0F2C59;" id="kpi-attempts">380</div>
           <div class="kpi-label" data-i18n="kpi_attempts">Total Scam Attempts Blocked</div>
         </div>
         <div class="kpi-card">
@@ -427,11 +456,15 @@
       <!-- Row 2: 2-Column Split -->
       <div class="grid-12">
         
-        <!-- Left: Blacklist Table -->
+        <!-- Left: Blacklist Table with Filter Search -->
         <div class="col-6">
           <div class="card-box" style="height: 100%;">
-            <h3 class="card-h3" data-i18n="table_blacklist_title">Public Blacklisted UPI & Phone Directory</h3>
-            <div style="overflow-x: auto; margin-top: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h3 class="card-h3" data-i18n="table_blacklist_title">Public Blacklisted UPI & Phone Directory</h3>
+            </div>
+            <input type="text" id="blacklist-search-input" class="input-control" style="padding: 8px 12px; font-size: 13px; margin-bottom: 12px;" placeholder="Filter by UPI, Phone, Bank A/C or Category...">
+            
+            <div style="overflow-x: auto;">
               <table class="utility-table" id="trends-blacklist-table">
                 <thead>
                   <tr>
@@ -511,7 +544,7 @@
                 <th>Truecaller</th>
                 <th>Sanchar Saathi (Chakshu)</th>
                 <th>Global Voice Bots (Apate.ai)</th>
-                <th style="background: #EFF6FF; color: #1E3A8A; font-weight: 800;">🛡️ ScamTrap Bharat (Ours)</th>
+                <th style="background: #EFF6FF; color: #0F2C59; font-weight: 800;">🛡️ ScamTrap Bharat (Ours)</th>
               </tr>
             </thead>
             <tbody>
@@ -561,7 +594,7 @@
 
   <!-- ==================== FOOTER ==================== -->
   <footer class="app-footer">
-    ScamTrap Bharat • Active Cyber Safety & Scam Account Hunter Engine • Mentored by IIT Bombay for MY Bharat Track • 100% Local Safe Sandbox
+    ScamTrap Bharat • National Citizen Cyber Defense & Pre-Fraud Interception Portal • Mentored by IIT Bombay for MY Bharat Track • 100% Local Safe Sandbox
   </footer>
 
   <script src="/js/i18n.js"></script>

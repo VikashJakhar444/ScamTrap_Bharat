@@ -1,4 +1,4 @@
-/* ScamTrap Bharat - Public Cyber Safety Design System */
+/* ScamTrap Bharat - National Cyber Defense Design System */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
 :root {
@@ -6,10 +6,10 @@
   --bg-card: #FFFFFF;
   --border-card: 1px solid #E2E8F0;
   --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
-  --shadow-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-hover: 0 10px 20px -5px rgba(15, 44, 89, 0.1), 0 4px 6px -4px rgba(15, 44, 89, 0.05);
   
-  --primary-navy: #1E3A8A;
-  --navy-dark: #0F172A;
+  --primary-navy: #0F2C59;
+  --navy-dark: #0A1E3D;
   --interactive-blue: #2563EB;
   --interactive-blue-hover: #1D4ED8;
   
@@ -59,7 +59,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .top-bar {
@@ -81,16 +81,16 @@ body {
 }
 
 .brand-icon-box {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #0F2C59 0%, #2563EB 100%);
   color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  font-size: 1.3rem;
-  box-shadow: 0 2px 6px rgba(30, 58, 138, 0.2);
+  font-size: 1.35rem;
+  box-shadow: 0 2px 8px rgba(15, 44, 89, 0.25);
 }
 
 .brand-title {
@@ -122,7 +122,7 @@ body {
   font-family: var(--font-main);
   font-size: 14px;
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 150ms ease;
@@ -137,7 +137,7 @@ body {
 .tab-nav-btn.active {
   background: var(--primary-navy);
   color: #FFFFFF;
-  box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+  box-shadow: 0 2px 6px rgba(15, 44, 89, 0.2);
 }
 
 .header-right-actions {
@@ -146,17 +146,33 @@ body {
   gap: 12px;
 }
 
+/* Pulsing Sandbox Badge */
 .sandbox-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--status-emerald-bg);
   color: var(--status-emerald);
   border: 1px solid var(--status-emerald-border);
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 9999px;
   font-size: 13px;
   font-weight: 700;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--status-emerald);
+  border-radius: 50%;
+  box-shadow: 0 0 0 rgba(5, 150, 105, 0.4);
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
 }
 
 .btn-lang-toggle {
@@ -377,7 +393,7 @@ body {
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 9999px;
   cursor: pointer;
   transition: all 150ms ease;
@@ -408,6 +424,63 @@ body {
   background: #EFF6FF;
   color: #1D4ED8;
   border: 1px solid #BFDBFE;
+}
+
+.badge-mono-emerald {
+  background: var(--status-emerald-bg);
+  color: var(--status-emerald);
+  border: 1px solid var(--status-emerald-border);
+}
+
+/* Radial Gauge / Speedometer */
+.gauge-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: #FFFFFF;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  margin-bottom: 14px;
+}
+
+.radial-progress-svg {
+  width: 80px;
+  height: 80px;
+  transform: rotate(-90deg);
+}
+
+.radial-bg-circle {
+  fill: none;
+  stroke: #E2E8F0;
+  stroke-width: 8;
+}
+
+.radial-val-circle {
+  fill: none;
+  stroke: #DC2626;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transition: stroke-dashoffset 800ms ease, stroke 400ms ease;
+}
+
+/* Dropzone styling */
+.dropzone-box {
+  border: 1.5px dashed #CBD5E1;
+  background: #F8FAFC;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.dropzone-box:hover {
+  border-color: var(--interactive-blue);
+  background: #EFF6FF;
 }
 
 /* Alert Boxes */
@@ -490,6 +563,13 @@ body {
   border: 1px solid #BFDBFE;
 }
 
+.wa-typing-indicator {
+  font-size: 12px;
+  color: #059669;
+  font-weight: 600;
+  font-style: italic;
+}
+
 /* KPI Stat Cards (Tab 4) */
 .kpi-grid {
   display: grid;
@@ -510,6 +590,12 @@ body {
   border-radius: 12px;
   padding: 20px;
   box-shadow: var(--shadow-card);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .kpi-val {

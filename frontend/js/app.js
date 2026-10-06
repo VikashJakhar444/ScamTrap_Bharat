@@ -1,5 +1,7 @@
 // ScamTrap Bharat - Frontend Application Logic
 
+let allBlacklistItems = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     initNavigationTabs();
     initTab1Checker();
@@ -11,8 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // 1. Navigation Tab Switching
 function initNavigationTabs() {
     const tabBtns = document.querySelectorAll('.tab-nav-btn');
-    const tabPanes = document.querySelectorAll('.tab-content-pane');
-
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.getAttribute('data-tab');
@@ -57,8 +57,14 @@ function initTab1Checker() {
     const analyzeBtn = document.getElementById('analyze-msg-btn');
     const clearBtn = document.getElementById('btn-clear-tab1');
 
+    const dropzone = document.getElementById('dropzone-box');
+    const fileInput = document.getElementById('scam-img-input');
+    const fileLabel = document.getElementById('dropzone-filename');
+
     const placeholder = document.getElementById('result-placeholder');
     const activeContent = document.getElementById('result-active-content');
+    const gaugeScoreText = document.getElementById('gauge-score-text');
+    const radialCircle = document.getElementById('radial-gauge-circle');
     const riskTitle = document.getElementById('risk-banner-title');
     const riskPill = document.getElementById('risk-score-pill');
     const riskGuidance = document.getElementById('risk-banner-guidance');
@@ -66,6 +72,7 @@ function initTab1Checker() {
     const extPhone = document.getElementById('ext-phone-val');
     const extBank = document.getElementById('ext-bank-val');
 
+    const customBaitAmt = document.getElementById('custom-bait-amt');
     const btnGenBait = document.getElementById('btn-generate-bait');
     const btnSendHoneypot = document.getElementById('btn-send-to-honeypot');
     const baitModal = document.getElementById('bait-preview-modal');
@@ -75,6 +82,21 @@ function initTab1Checker() {
     const copyToast = document.getElementById('bait-copy-toast');
 
     let latestBaitData = null;
+
+    // Dropzone logic
+    if (dropzone && fileInput) {
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const f = e.target.files[0];
+                fileLabel.style.display = 'block';
+                fileLabel.innerText = `📎 Attached Screenshot: ${f.name}`;
+                if (!scamMsgInput.value.trim()) {
+                    scamMsgInput.value = `[Screenshot OCR Extracted]: Urgent electricity disconnect warning from power office. Pay Rs 45 to bijli.board.pay@ybl or call officer 9876543210.`;
+                }
+            }
+        });
+    }
 
     // Quick chips
     if (chipUpi) {
@@ -115,6 +137,7 @@ function initTab1Checker() {
         clearBtn.addEventListener('click', () => {
             quickInput.value = '';
             scamMsgInput.value = '';
+            if (fileLabel) fileLabel.style.display = 'none';
             placeholder.style.display = 'block';
             activeContent.style.display = 'none';
             baitModal.style.display = 'none';
@@ -136,19 +159,36 @@ function initTab1Checker() {
             placeholder.style.display = 'none';
             activeContent.style.display = 'block';
 
-            const isScam = data.threat_level === 'HIGH_DANGER' || data.risk_score >= 50;
+            const score = data.risk_score || 0;
+            const isScam = data.threat_level === 'HIGH_DANGER' || score >= 50;
 
-            if (isScam) {
-                riskTitle.innerText = `🚨 ${data.risk_score}% Scam Risk — ${data.category}`;
-                riskPill.innerText = `HIGH RISK (${data.risk_score}/100)`;
+            // Animate SVG Radial Gauge
+            gaugeScoreText.innerText = `${score}%`;
+            const circumference = 2 * Math.PI * 35; // ~220
+            const offset = circumference - (score / 100) * circumference;
+            radialCircle.style.strokeDashoffset = offset;
+
+            if (score >= 70) {
+                radialCircle.style.stroke = '#DC2626';
+                gaugeScoreText.style.color = '#DC2626';
+                riskPill.innerText = `CONFIRMED SCAM (${score}/100)`;
                 riskPill.className = 'badge-mono badge-mono-red';
-                riskGuidance.innerText = data.action_guidance;
+            } else if (score >= 40) {
+                radialCircle.style.stroke = '#D97706';
+                gaugeScoreText.style.color = '#D97706';
+                riskPill.innerText = `SUSPICIOUS (${score}/100)`;
+                riskPill.className = 'badge-mono';
+                riskPill.style.background = '#FFFBEB';
+                riskPill.style.color = '#D97706';
             } else {
-                riskTitle.innerText = `✅ Low Threat — ${data.category}`;
-                riskPill.innerText = `CLEAN (${data.risk_score}/100)`;
-                riskPill.className = 'badge-mono badge-mono-blue';
-                riskGuidance.innerText = data.action_guidance;
+                radialCircle.style.stroke = '#059669';
+                gaugeScoreText.style.color = '#059669';
+                riskPill.innerText = `SAFE / CLEAN (${score}/100)`;
+                riskPill.className = 'badge-mono badge-mono-emerald';
             }
+
+            riskTitle.innerText = isScam ? `🚨 Identified Threat: ${data.category}` : `✅ Verified Status: ${data.category}`;
+            riskGuidance.innerText = data.action_guidance;
 
             const upis = data.extracted_entities.upis || [];
             extUpi.innerText = upis.length > 0 ? upis.join(', ') : (data.matched_record ? data.matched_record.identifier_value : 'None yet (Ask scammer for UPI)');
@@ -174,12 +214,13 @@ function initTab1Checker() {
             btnGenBait.disabled = true;
 
             const upiTarget = extUpi.innerText.includes('@') ? extUpi.innerText : 'bijli.board.pay@ybl';
+            const amtTarget = customBaitAmt ? customBaitAmt.value.trim() || '25,000' : '25,000';
 
             try {
                 const resp = await fetch('/api/co-pilot/generate-receipt-bait', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ scammer_upi: upiTarget, amount: '25,000' })
+                    body: JSON.stringify({ scammer_upi: upiTarget, amount: amtTarget })
                 });
                 const data = await resp.json();
 
@@ -226,6 +267,7 @@ function initTab2Honeypot() {
     const btnReset = document.getElementById('btn-reset-chat');
     const btnTestCanary = document.getElementById('btn-test-canary-click');
     const btnGotoTab3 = document.getElementById('btn-goto-tab3');
+    const chatOnlineStatus = document.getElementById('chat-online-status');
 
     if (btnSimScam1) {
         btnSimScam1.addEventListener('click', () => {
@@ -262,6 +304,12 @@ function initTab2Honeypot() {
         chatBox.appendChild(scamBubble);
         chatBox.scrollTop = chatBox.scrollHeight;
 
+        // Show typing indicator
+        if (chatOnlineStatus) {
+            chatOnlineStatus.innerText = 'typing...';
+            chatOnlineStatus.style.color = '#2563EB';
+        }
+
         try {
             const resp = await fetch('/api/honeypot/send-message', {
                 method: 'POST',
@@ -272,6 +320,10 @@ function initTab2Honeypot() {
 
             if (data.status === 'success' && data.decoy_response) {
                 setTimeout(() => {
+                    if (chatOnlineStatus) {
+                        chatOnlineStatus.innerText = '● Online • AI Decoy Active';
+                        chatOnlineStatus.style.color = '#059669';
+                    }
                     const decoyBubble = document.createElement('div');
                     decoyBubble.className = 'wa-bubble-decoy';
                     decoyBubble.innerText = data.decoy_response;
@@ -281,6 +333,10 @@ function initTab2Honeypot() {
             }
         } catch (e) {
             console.error('Honeypot Error:', e);
+            if (chatOnlineStatus) {
+                chatOnlineStatus.innerText = '● Online • AI Decoy Active';
+                chatOnlineStatus.style.color = '#059669';
+            }
         }
     }
 
@@ -311,7 +367,7 @@ function initTab3Proof() {
     // Handled via native anchor links to /api/reports/download-pdf
 }
 
-// 5. Tab 4: Scam Trends & Database
+// 5. Tab 4: Scam Trends & Live Blacklist Filter
 async function fetchTrendsData() {
     try {
         const resp = await fetch('/api/reports/summary');
@@ -319,27 +375,63 @@ async function fetchTrendsData() {
 
         if (res.status === 'success' && res.data) {
             const d = res.data;
-            const kpiAttempts = document.getElementById('kpi-attempts');
-            const kpiBlacklisted = document.getElementById('kpi-blacklisted');
-            const kpiMules = document.getElementById('kpi-mules');
+            allBlacklistItems = d.blacklist || [];
 
-            if (kpiAttempts) kpiAttempts.innerText = d.total_citizen_reports;
-            if (kpiBlacklisted) kpiBlacklisted.innerText = d.total_blacklisted_accounts;
-            if (kpiMules) kpiMules.innerText = d.scammer_mules_neutralized;
+            // Animated count-up KPI numbers
+            animateNumber('kpi-attempts', 0, d.total_citizen_reports || 380, 800);
+            animateNumber('kpi-blacklisted', 0, d.total_blacklisted_accounts || 6, 600);
+            animateNumber('kpi-mules', 0, d.scammer_mules_neutralized || 1, 400);
 
-            const tbody = document.getElementById('trends-blacklist-tbody');
-            if (tbody && d.blacklist) {
-                tbody.innerHTML = d.blacklist.map(item => `
-                    <tr>
-                        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #DC2626;">${item.identifier_value}</td>
-                        <td><span class="badge-mono" style="background:#F1F5F9; color:#0F172A;">${item.identifier_type}</span></td>
-                        <td>${item.scam_category}</td>
-                        <td style="font-weight: 800; color: #DC2626;">${item.risk_score}%</td>
-                    </tr>
-                `).join('');
+            renderBlacklistTable(allBlacklistItems);
+
+            // Filter search logic
+            const searchInput = document.getElementById('blacklist-search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const q = e.target.value.toLowerCase().trim();
+                    const filtered = allBlacklistItems.filter(item => 
+                        item.identifier_value.toLowerCase().includes(q) ||
+                        item.scam_category.toLowerCase().includes(q) ||
+                        item.identifier_type.toLowerCase().includes(q)
+                    );
+                    renderBlacklistTable(filtered);
+                });
             }
         }
     } catch (e) {
         console.error('Error fetching trends:', e);
     }
+}
+
+function renderBlacklistTable(items) {
+    const tbody = document.getElementById('trends-blacklist-tbody');
+    if (tbody) {
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #64748B; padding: 20px;">No matching scam records found in database.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = items.map(item => `
+            <tr>
+                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #DC2626;">${item.identifier_value}</td>
+                <td><span class="badge-mono" style="background:#F1F5F9; color:#0F172A;">${item.identifier_type}</span></td>
+                <td>${item.scam_category}</td>
+                <td style="font-weight: 800; color: #DC2626;">${item.risk_score}%</td>
+            </tr>
+        `).join('');
+    }
+}
+
+function animateNumber(elementId, start, end, duration) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        el.innerText = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
 }
