@@ -3,106 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NPCI Payment Status & Transaction Verification</title>
+  <title>State Bank of India • IMPS Settlement & Transaction Audit Status</title>
   <link rel="stylesheet" href="/assets/css/main.css">
   <style>
     body {
-      background-color: #f1f5f9;
+      background-color: #F8FAFC;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      min-height: 100vh;
+      padding: 20px;
     }
-    .receipt-box {
-      background: #ffffff;
-      max-width: 480px;
+    .sbi-portal-card {
+      background: #FFFFFF;
+      max-width: 520px;
       width: 100%;
-      border-radius: 16px;
-      border: 1px solid #e2e8f0;
-      padding: 2rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-      text-align: center;
+      border-radius: 14px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
     }
-    .status-icon {
-      width: 64px;
-      height: 64px;
-      background: #fee2e2;
-      color: #dc2626;
-      border-radius: 50%;
-      display: inline-flex;
+    .sbi-header-bar {
+      background: #1E3A8A;
+      color: #FFFFFF;
+      padding: 16px 20px;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      margin-bottom: 1rem;
+      justify-content: space-between;
     }
-    .receipt-table {
+    .sbi-body-content {
+      padding: 24px;
+    }
+    .status-badge-failed {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #DC2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .data-table-receipt {
       width: 100%;
-      text-align: left;
-      margin-top: 1.5rem;
-      font-size: 0.9rem;
       border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 10px;
     }
-    .receipt-table td {
-      padding: 0.6rem 0;
-      border-bottom: 1px solid #f1f5f9;
+    .data-table-receipt td {
+      padding: 10px 0;
+      border-bottom: 1px solid #F1F5F9;
     }
-    .receipt-table td.label {
-      color: #64748b;
+    .data-table-receipt td.col-lbl {
+      color: #64748B;
       font-weight: 500;
     }
-    .receipt-table td.val {
-      color: #0f172a;
-      font-weight: 600;
+    .data-table-receipt td.col-val {
+      color: #0F172A;
+      font-weight: 700;
       text-align: right;
     }
   </style>
 </head>
 <body>
-  <div class="receipt-box">
-    <div class="status-icon">✕</div>
-    <h2 style="font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;">Transaction Status: Failed</h2>
-    <p style="color: #dc2626; font-size: 0.9rem; font-weight: 600;">Error: UPI Daily Volume Limit Exceeded (U30)</p>
-    
-    <table class="receipt-table">
-      <tr>
-        <td class="label">Reference ID:</td>
-        <td class="val" id="refId">UPI/2026/89410928</td>
-      </tr>
-      <tr>
-        <td class="label">Amount Attempted:</td>
-        <td class="val">₹450.00</td>
-      </tr>
-      <tr>
-        <td class="label">Sender Account:</td>
-        <td class="val">State Bank of India (••4192)</td>
-      </tr>
-      <tr>
-        <td class="label">Status Verification:</td>
-        <td class="val" style="color: #059669;">Verified by NPCI Gateway</td>
-      </tr>
-      <tr>
-        <td class="label">Advised Action:</td>
-        <td class="val" style="color: #d97706;">Transfer via Backup Account / IMPS</td>
-      </tr>
-    </table>
 
-    <div style="margin-top: 1.5rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px; font-size: 0.8rem; color: #64748b;">
-      🔒 NPCI Verified Digital Audit Receipt • Safe Sandbox Node
+  <div class="sbi-portal-card">
+    <div class="sbi-header-bar">
+      <div style="font-size: 16px; font-weight: 800; letter-spacing: -0.01em;">🏦 State Bank of India • Inward Clearing Portal</div>
+      <div style="font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px; font-weight: 600;">IMPS/UPI</div>
+    </div>
+
+    <div class="sbi-body-content">
+      <div class="status-badge-failed">
+        <div style="font-size: 24px;">⚠️</div>
+        <div>
+          <div style="font-weight: 800; font-size: 15px;">Transaction Inward Hold (Code: U16)</div>
+          <div style="font-size: 13px; color: #991B1B;">Receiver Account Daily Inward Cap of ₹1,00,000 Exhausted</div>
+        </div>
+      </div>
+
+      <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 16px;">
+        The attempted inward transfer cannot be settled to the beneficiary UPI handle due to statutory NPCI daily limits. The beneficiary must provide an <strong>alternate bank account + IFSC</strong> or <strong>secondary UPI handle</strong> to complete settlement.
+      </p>
+
+      <table class="data-table-receipt">
+        <tr>
+          <td class="col-lbl">Transaction Reference:</td>
+          <td class="col-val" style="font-family: 'JetBrains Mono', monospace;" id="displayTxnRef">UPI/2026/89410928</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Attempted Settlement Amount:</td>
+          <td class="col-val">₹25,000.00</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Originating Account:</td>
+          <td class="col-val">SBI Savings (•••• 4821)</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">NPCI Response:</td>
+          <td class="col-val" style="color: #DC2626;">U16_DAILY_INWARD_EXCEEDED</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Settlement Recommendation:</td>
+          <td class="col-val" style="color: #059669;">Provide Backup Bank A/C / IMPS</td>
+        </tr>
+      </table>
+
+      <div style="margin-top: 20px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px; text-align: center; font-size: 12px; color: #64748B;">
+        🔒 NPCI Banking Gateway Verification Node • Reference Integrity Logged
+      </div>
     </div>
   </div>
 
   <script>
-    // Automatically log canary trigger
     document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const trapCode = urlParams.get('code') || 'TRAP-CANARY';
+      const pathParts = window.location.pathname.split('/');
+      const trapCode = urlParams.get('code') || pathParts[pathParts.length - 1] || 'TRAP-AUTO';
       const caseId = urlParams.get('case') || 'CASE-2026-1001';
 
+      // Record canary hit safely
       fetch('/api/co-pilot/log-trap-visit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trap_code: trapCode, case_id: caseId })
-      }).catch(err => console.log('Canary Logged:', err));
+      }).catch(() => {});
     });
   </script>
 </body>

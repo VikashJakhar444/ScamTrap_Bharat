@@ -18,7 +18,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for local cross-origin development
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -65,7 +65,8 @@ def serve_home():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.get("/verify_receipt.html")
-def serve_receipt():
+@app.get("/receipt/{trap_code}")
+def serve_receipt(trap_code: str = ""):
     return FileResponse(FRONTEND_DIR / "verify_receipt.html")
 
 if __name__ == "__main__":

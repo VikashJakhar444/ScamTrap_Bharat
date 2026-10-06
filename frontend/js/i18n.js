@@ -3,113 +3,141 @@
 const translations = {
     en: {
         app_title: "ScamTrap Bharat",
-        app_subtitle: "Citizen Cyber Safety & Active Scam Account Hunter",
-        sandbox_badge: "🔒 100% Local Safe Sandbox (Zero External Data Sharing)",
-        lang_toggle_btn: "🌐 हिंदी (Switch to Hindi)",
+        app_subtitle: "Citizen Cyber Safety & Scam Account Hunter",
+        sandbox_badge: "🔒 Safe Sandbox Mode",
+        lang_toggle_btn: "🌐 हिंदी में देखें",
         
         // Navigation Tabs
-        tab_checker: "🔍 Check a Scam & Co-Pilot",
-        tab_honeypot: "🤖 Live WhatsApp Honeypot",
-        tab_dossier: "📄 Scammer Proof & Police PDF",
-        tab_radar: "📊 Bharat Scam Radar",
+        tab_checker: "🔍 1. Check a Scam",
+        tab_honeypot: "🤖 2. Trap Scammer (Live AI)",
+        tab_proof: "📄 3. Scammer Proof & Police PDF",
+        tab_trends: "📊 4. Scam Trends & Why Us",
 
-        // Tab 1: Scam Checker
-        checker_title: "Check Suspicious UPI ID, Phone Number or Message",
-        checker_desc: "Enter any phone number, UPI ID, or paste a full WhatsApp message. Our local engine checks the scam registry and extracts financial threat patterns.",
-        input_placeholder: "e.g. 9876543210, bijli.board.pay@ybl, or paste: 'Dear Consumer your electricity power will be disconnected tonight...'",
-        btn_check: "Check Threat Level",
-        btn_clear: "Clear",
-        quick_test_label: "Quick Sample Tests:",
-        sample_electricity: "⚡ Electricity Bill Scam",
-        sample_kyc: "🏦 Bank KYC Block Scam",
-        sample_clean: "✅ Genuine Clean Number",
+        // Tab 1: Check a Scam
+        card1_heading: "Check Any Suspicious Message, UPI ID, or Phone Number",
+        card1_desc: "Check suspicious payments before sending ₹1. Our active engine verifies known scam records and analyzes financial threat patterns.",
+        quick_search_label: "Check a UPI ID, Phone Number, or Bank Account",
+        quick_search_placeholder: "e.g., bijli.board.pay@ybl or 9876543210",
+        btn_quick_search: "🔍 Check Database",
+        chip_test_upi: "Test Scam UPI: bijli.board.pay@ybl",
+        chip_test_msg: "Test Scam Msg: Electricity Bill Disconnect",
         
-        // Co-Pilot Counter Bait Card
-        copilot_title: "Citizen Counter-Bait Co-Pilot",
-        copilot_desc: "Generate a realistic 'UPI Daily Limit Reached' screenshot to send the scammer, tricking them into revealing their secondary bank account or alternate UPI ID.",
-        btn_gen_bait: "Generate UPI Limit Counter-Bait",
+        paste_msg_label: "Paste a Suspicious WhatsApp / SMS Message",
+        paste_msg_placeholder: "Paste the message asking for urgent payment, KYC update, or electricity bill...",
+        attach_screenshot_btn: "📷 Attach Scam Screenshot (Optional)",
+        btn_analyze_msg: "🛡️ Check If This Is a Scam",
         
-        // Tab 2: Live WhatsApp Honeypot
-        honeypot_title: "Autonomous 2-Phone WhatsApp Trap Node",
-        honeypot_desc: "Connects a dedicated honeypot mobile to automatically chat with scammers in natural Hinglish. Traps secondary accounts without risking any citizen money.",
-        honeypot_status_active: "Active Node: Online (Standby)",
-        honeypot_persona_label: "Active AI Decoy Persona: 'Vikas Ji' (Elderly Retired Citizen)",
-        btn_start_trap: "Start Live AI Trap",
-        honeypot_chat_header: "Simulated Honeypot WhatsApp Conversation",
-        input_scammer_msg_placeholder: "Type message as scammer (e.g. 'Pay Rs 45 now or power will cut')...",
-        btn_send_scammer: "Send as Scammer",
+        card2_heading: "Instant Safety Result & Citizen Co-Pilot",
+        placeholder_result: "Enter a UPI ID or message on the left to check its safety.",
         
-        // Tab 3: Scammer Proof & Police PDF
-        dossier_title: "Scammer Digital Evidence & 1930 Cyber Cell Dossier",
-        dossier_desc: "Directly export verified scammer UPI IDs, Bank Accounts, IFSC codes, and device forensics ready for immediate freezing by Cyber Police.",
-        mule_accounts_heading: "Trapped Scam Accounts & Financial Identifiers",
-        device_forensics_heading: "Captured Scammer Device & Network Audit",
-        btn_download_pdf: "📥 Download Official 1930 Evidence Dossier (PDF)",
+        copilot_box_heading: "💡 Want to Expose Their Backup Bank Account Safely?",
+        copilot_box_desc: "Generate a realistic 'UPI Daily Limit Reached' error screenshot for this UPI ID. When you send this to the scammer, they greedily share their 2nd backup bank account!",
+        btn_gen_bait: "📸 Generate Fake 'Payment Failed' Screenshot",
+        btn_send_honeypot: "🤖 Hand Over to Live AI Honeypot (Tab 2)",
 
-        // Tab 4: Bharat Scam Radar
-        radar_title: "Bharat Scam Radar & Active Defense Matrix",
-        radar_desc: "Real-time statistics from your local sandbox and comparison of how ScamTrap Bharat stops fraud before money is lost.",
-        stat_blacklisted: "Blacklisted Scam Identifiers",
-        stat_reports: "Total Citizen Reports Analyzed",
-        stat_trapped: "Mule Bank Accounts Trapped",
-        stat_loss: "Citizen Financial Loss",
-        table_heading: "Live Public Scam Blacklist (SQLite Database)",
-        matrix_heading: "Why ScamTrap Bharat is Different (Comparison Matrix)"
+        // Tab 2: Trap Scammer
+        tab2_title: "Live 2-Phone Autonomous WhatsApp Trap Node",
+        tab2_desc: "Connect Phone 1 via WhatsApp Web QR code to autonomously engage scammers in natural Hinglish and trap their secondary mule accounts.",
+        wa_conn_title: "WhatsApp Node Connection",
+        wa_status_standby: "🟡 Standby — Scan QR to Link Phone 1",
+        wa_threads_title: "Active Scammer Threads",
+        btn_start_trap: "🎯 Start AI Trap",
+        btn_trap_active: "🛑 AI Trap Active",
+        wa_tip: "💡 Tip: On Phone 1, you can also type 'trap' in your 'Message Yourself' chat to activate the AI on the latest scammer!",
+        
+        chat_header_title: "Live WhatsApp Conversation",
+        chat_status_decoy: "🤖 AI Decoy Replying Automatically",
+        btn_reset_chat: "🔄 Reset Chat",
+        btn_send_msg_1st_upi: "Send Scam Msg + 1st UPI",
+        btn_send_2nd_bank: "Send 2nd Backup Bank A/C",
+        btn_test_scammer_click: "🔗 Test Scammer Clicking Trap Link",
+        btn_go_to_tab3: "📄 View Full Police Report (Go to Tab 3) →",
+
+        // Tab 3: Proof & Police PDF
+        tab3_banner_title: "Official Cybercrime Complaint Evidence File (NCRP 1930 Format)",
+        btn_download_1930_pdf: "📥 Download 1930 Police Report PDF",
+        card_upi_title: "💳 Scammer's UPI IDs",
+        card_bank_title: "🏦 Scammer's Bank Accounts & IFSC",
+        card_device_title: "🌐 Scammer's Network IP & Device Info",
+        card_chat_title: "💬 Complete Chat & Visual Bait Log",
+
+        // Tab 4: Scam Trends
+        kpi_attempts: "Total Scam Attempts Blocked",
+        kpi_blacklisted: "Scammer UPI IDs Blacklisted",
+        kpi_mules: "Mule Bank Accounts Exposed",
+        kpi_saved: "Est. Citizen Money Saved",
+        table_blacklist_title: "Public Blacklisted UPI & Phone Directory",
+        chart_category_title: "Scam Category Breakdown",
+        table_matrix_title: "🏆 Why ScamTrap Bharat is Different from Existing Tools"
     },
     hi: {
         app_title: "स्कैमट्रैप भारत",
-        app_subtitle: "नागरिक साइबर सुरक्षा एवं सक्रिय स्कैम खाता हंटर",
-        sandbox_badge: "🔒 100% स्थानीय सुरक्षित सैंडबॉक्स (कोई बाहरी डेटा साझा नहीं)",
-        lang_toggle_btn: "🌐 English (स्विच करें)",
+        app_subtitle: "नागरिक साइबर सुरक्षा एवं स्कैम खाता हंटर",
+        sandbox_badge: "🔒 सुरक्षित सैंडबॉक्स मोड",
+        lang_toggle_btn: "🌐 View in English",
         
         // Navigation Tabs
-        tab_checker: "🔍 स्कैम की जांच एवं को-पायलट",
-        tab_honeypot: "🤖 लाइव व्हाट्सएप हनीपॉट",
-        tab_dossier: "📄 स्कैमर सबूत एवं पुलिस PDF",
-        tab_radar: "📊 भारत स्कैम रडार",
+        tab_checker: "🔍 1. स्कैम की जांच करें",
+        tab_honeypot: "🤖 2. स्कैमर को ट्रैप करें (लाइव AI)",
+        tab_proof: "📄 3. स्कैमर सबूत एवं पुलिस PDF",
+        tab_trends: "📊 4. स्कैम रुझान एवं तुलना",
 
-        // Tab 1: Scam Checker
-        checker_title: "संदिग्ध UPI ID, फोन नंबर या मैसेज की तुरंत जांच करें",
-        checker_desc: "कोई भी फोन नंबर, UPI ID दर्ज करें या पूरा व्हाट्सएप मैसेज पेस्ट करें। हमारा सिस्टम स्कैम डेटाबेस में जांच कर वित्तीय धोखाधड़ी की पहचान करता है।",
-        input_placeholder: "जैसे: 9876543210, bijli.board.pay@ybl, या पेस्ट करें: 'Dear Consumer your electricity power will be disconnected tonight...'",
-        btn_check: "खतरे की जांच करें",
-        btn_clear: "साफ़ करें",
-        quick_test_label: "त्वरित परीक्षण नमूने:",
-        sample_electricity: "⚡ बिजली बिल स्कैम",
-        sample_kyc: "🏦 बैंक KYC ब्लॉक स्कैम",
-        sample_clean: "✅ सुरक्षित नंबर",
+        // Tab 1: Check a Scam
+        card1_heading: "संदिग्ध मैसेज, UPI ID या फोन नंबर की तुरंत जांच करें",
+        card1_desc: "₹1 भी भेजने से पहले संदिग्ध लेनदेन की जांच करें। हमारा एक्टिव इंजन ज्ञात स्कैम रिकॉर्ड और धोखाधड़ी के पैटर्न की पहचान करता है।",
+        quick_search_label: "UPI ID, फोन नंबर या बैंक खाता दर्ज करें",
+        quick_search_placeholder: "जैसे: bijli.board.pay@ybl या 9876543210",
+        btn_quick_search: "🔍 डेटाबेस में खोजें",
+        chip_test_upi: "परीक्षण स्कैम UPI: bijli.board.pay@ybl",
+        chip_test_msg: "परीक्षण स्कैम संदेश: बिजली बिल कनेक्शन",
         
-        // Co-Pilot Counter Bait Card
-        copilot_title: "नागरिक काउंटर-बेट को-पायलट",
-        copilot_desc: "स्कैमर को भेजने के लिए असली जैसा 'UPI Daily Limit Reached' स्क्रीनशॉट बनाएं, जिससे वह अपना दूसरा बैकअप बैंक खाता या वैकल्पिक UPI ID बता दे।",
-        btn_gen_bait: "UPI लिमिट स्क्रीनशॉट बेट बनाएं",
+        paste_msg_label: "संदिग्ध व्हाट्सएप / SMS मैसेज पेस्ट करें",
+        paste_msg_placeholder: "बिजली बिल, बैंक KYC या तत्काल भुगतान मांगने वाला मैसेज यहां पेस्ट करें...",
+        attach_screenshot_btn: "📷 स्कैम का स्क्रीनशॉट संलग्न करें (वैकल्पिक)",
+        btn_analyze_msg: "🛡️ जांचें कि क्या यह स्कैम है",
         
-        // Tab 2: Live WhatsApp Honeypot
-        honeypot_title: "स्वायत्त 2-फ़ोन व्हाट्सएप ट्रैप नोड",
-        honeypot_desc: "स्कैमर्स से स्वचालित रूप से स्वाभाविक हिंग्लिश में चैट करने के लिए समर्पित हनीपॉट फोन जोड़ता है और नागरिक का ₹1 गंवाए बिना उनके बैंक खाते पकड़ता है।",
-        honeypot_status_active: "सक्रिय नोड: ऑनलाइन (तैयार)",
-        honeypot_persona_label: "सक्रिय AI डिकॉय: 'विकास जी' (वरिष्ठ नागरिक)",
-        btn_start_trap: "लाइव AI ट्रैप शुरू करें",
-        honeypot_chat_header: "सिम्युलेटेड हनीपॉट व्हाट्सएप बातचीत",
-        input_scammer_msg_placeholder: "स्कैमर के रूप में मैसेज लिखें (जैसे: 'तुरंत 45 रुपये भरें वरना बिजली कटेगी')...",
-        btn_send_scammer: "स्कैमर की ओर से भेजें",
+        card2_heading: "त्वरित सुरक्षा परिणाम एवं नागरिक को-पायलट",
+        placeholder_result: "सुरक्षा जांचने के लिए बाईं ओर UPI ID या मैसेज दर्ज करें।",
         
-        // Tab 3: Scammer Proof & Police PDF
-        dossier_title: "स्कैमर डिजिटल सबूत एवं 1930 साइबर सेल डोजियर",
-        dossier_desc: "साइबर पुलिस द्वारा तुरंत खाते फ्रीज कराने के लिए सत्यापित स्कैमर UPI ID, बैंक खाते, IFSC और डिवाइस डिजिटल सबूत सीधे डाउनलोड करें।",
-        mule_accounts_heading: "पकड़े गए स्कैम बैंक खाते एवं UPI IDs",
-        device_forensics_heading: "पकड़ा गया स्कैमर डिवाइस व नेटवर्क ऑडिट",
-        btn_download_pdf: "📥 आधिकारिक 1930 सबूत डोजियर (PDF) डाउनलोड करें",
+        copilot_box_heading: "💡 क्या आप उनका दूसरा बैकअप बैंक खाता सुरक्षित पकड़ना चाहते हैं?",
+        copilot_box_desc: "इस UPI ID के लिए असली जैसा 'UPI Daily Limit Reached' स्क्रीनशॉट बनाएं। जब आप इसे भेजेंगे, तो स्कैमर अपना दूसरा बैकअप बैंक खाता बता देगा!",
+        btn_gen_bait: "📸 नकली 'Payment Failed' स्क्रीनशॉट बनाएं",
+        btn_send_honeypot: "🤖 लाइव AI हनीपॉट को सौंपें (टैब 2)",
 
-        // Tab 4: Bharat Scam Radar
-        radar_title: "भारत स्कैम रडार एवं सक्रिय सुरक्षा मैट्रिक्स",
-        radar_desc: "स्थानीय डेटाबेस से लाइव आंकड़े और तुलना कि स्कैमट्रैप भारत पैसे डूबने से पहले ही धोखाधड़ी को कैसे रोकता है।",
-        stat_blacklisted: "ब्लैकलिस्टेड स्कैम खाते",
-        stat_reports: "विश्लेषण की गई नागरिक रिपोर्टें",
-        stat_trapped: "पकड़े गए बैकअप बैंक खाते",
-        stat_loss: "नागरिक वित्तीय नुकसान",
-        table_heading: "लाइव पब्लिक स्कैम ब्लैकलिस्ट (SQLite डेटाबेस)",
-        matrix_heading: "स्कैमट्रैप भारत दूसरों से अलग क्यों है (तुलना चार्ट)"
+        // Tab 2: Trap Scammer
+        tab2_title: "लाइव 2-फ़ोन स्वायत्त व्हाट्सएप ट्रैप नोड",
+        tab2_desc: "स्कैमर्स से स्वचालित रूप से स्वाभाविक हिंग्लिश में बात करने और उनके बैकअप बैंक खाते पकड़ने के लिए फोन 1 को QR कोड से जोड़ें।",
+        wa_conn_title: "व्हाट्सएप नोड कनेक्शन",
+        wa_status_standby: "🟡 तैयार — फोन 1 जोड़ने के लिए QR स्कैन करें",
+        wa_threads_title: "सक्रिय स्कैमर चैट",
+        btn_start_trap: "🎯 AI ट्रैप शुरू करें",
+        btn_trap_active: "🛑 AI ट्रैप सक्रिय है",
+        wa_tip: "💡 सलाह: फोन 1 पर आप अपने खुद के नंबर पर 'trap' लिखकर भी अंतिम स्कैमर पर AI एक्टिवेट कर सकते हैं!",
+        
+        chat_header_title: "लाइव व्हाट्सएप बातचीत",
+        chat_status_decoy: "🤖 AI डिकॉय स्वचालित जवाब दे रहा है",
+        btn_reset_chat: "🔄 चैट रीसेट करें",
+        btn_send_msg_1st_upi: "स्कैम मैसेज + 1st UPI भेजें",
+        btn_send_2nd_bank: "2nd बैकअप बैंक खाता भेजें",
+        btn_test_scammer_click: "🔗 स्कैमर द्वारा लिंक क्लिक का परीक्षण करें",
+        btn_go_to_tab3: "📄 पूरी पुलिस रिपोर्ट देखें (टैब 3 पर जाएं) →",
+
+        // Tab 3: Proof & Police PDF
+        tab3_banner_title: "आधिकारिक साइबर अपराध सबूत फ़ाइल (NCRP 1930 प्रारूप)",
+        btn_download_1930_pdf: "📥 1930 पुलिस रिपोर्ट PDF डाउनलोड करें",
+        card_upi_title: "💳 स्कैमर के UPI IDs",
+        card_bank_title: "🏦 स्कैमर के बैंक खाते एवं IFSC",
+        card_device_title: "🌐 स्कैमर का नेटवर्क IP व डिवाइस विवरण",
+        card_chat_title: "💬 पूरी बातचीत एवं स्क्रीनशॉट लॉग",
+
+        // Tab 4: Scam Trends
+        kpi_attempts: "रोके गए कुल स्कैम प्रयास",
+        kpi_blacklisted: "ब्लैकलिस्टेड स्कैमर UPI IDs",
+        kpi_mules: "पकड़े गए बैकअप बैंक खाते",
+        kpi_saved: "नागरिकों के बचाए गए अनुमानित पैसे",
+        table_blacklist_title: "सार्वजनिक ब्लैकलिस्टेड UPI एवं फोन डायरेक्टरी",
+        chart_category_title: "स्कैम श्रेणियों का विश्लेषण",
+        table_matrix_title: "🏆 स्कैमट्रैप भारत दूसरों से अलग क्यों है"
     }
 };
 
@@ -133,7 +161,7 @@ function applyTranslations() {
         }
     });
 
-    const langBtn = document.getElementById('langToggleBtn');
+    const langBtn = document.getElementById('lang-toggle-btn');
     if (langBtn) {
         langBtn.innerText = t.lang_toggle_btn;
     }
@@ -141,7 +169,7 @@ function applyTranslations() {
 
 document.addEventListener('DOMContentLoaded', () => {
     applyTranslations();
-    const btn = document.getElementById('langToggleBtn');
+    const btn = document.getElementById('lang-toggle-btn');
     if (btn) {
         btn.addEventListener('click', toggleLanguage);
     }

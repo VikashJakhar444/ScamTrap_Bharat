@@ -1,225 +1,266 @@
-// ScamTrap Bharat Frontend Application Logic
+// ScamTrap Bharat - Frontend Application Logic
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTabs();
-    initChecker();
-    initCoPilotBait();
-    initHoneypotChat();
-    initDossierDownload();
-    fetchScamRadarSummary();
+    initNavigationTabs();
+    initTab1Checker();
+    initTab2Honeypot();
+    initTab3Proof();
+    initTab4Trends();
 });
 
-// 1. Tab Switching Logic
-function initTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
+// 1. Navigation Tab Switching
+function initNavigationTabs() {
+    const tabBtns = document.querySelectorAll('.tab-nav-btn');
+    const tabPanes = document.querySelectorAll('.tab-content-pane');
 
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabPanes.forEach(p => p.classList.remove('active'));
-
-            btn.classList.add('active');
             const targetId = btn.getAttribute('data-tab');
-            const targetPane = document.getElementById(targetId);
-            if (targetPane) {
-                targetPane.classList.add('active');
-            }
-
-            if (targetId === 'tab4') {
-                fetchScamRadarSummary();
-            }
+            switchTab(targetId);
         });
     });
 }
 
-// 2. Scam Checker & Heuristics
-function initChecker() {
-    const input = document.getElementById('checkerInput');
-    const btnCheck = document.getElementById('btnRunCheck');
-    const btnClear = document.getElementById('btnClearCheck');
-    const resultBox = document.getElementById('checkerResultBox');
-    const coPilotSection = document.getElementById('coPilotBaitSection');
+function switchTab(targetId) {
+    const tabBtns = document.querySelectorAll('.tab-nav-btn');
+    const tabPanes = document.querySelectorAll('.tab-content-pane');
 
-    const sample1 = document.getElementById('sample1');
-    const sample2 = document.getElementById('sample2');
-    const sample3 = document.getElementById('sample3');
-
-    if (sample1) {
-        sample1.addEventListener('click', () => {
-            input.value = "Dear Consumer, Your Electricity power will be disconnected tonight 9:30 PM from power office because your previous month bill was not updated. Please immediately contact our officer at 9876543210 or pay Rs 45 on UPI bijli.board.pay@ybl.";
-            runScamCheck();
-        });
-    }
-
-    if (sample2) {
-        sample2.addEventListener('click', () => {
-            input.value = "Dear SBI Customer, Your YONO NetBanking account has been blocked due to pending KYC verification. Please click here or transfer to sbi.kyc.update@okaxis to re-verify within 2 hours.";
-            runScamCheck();
-        });
-    }
-
-    if (sample3) {
-        sample3.addEventListener('click', () => {
-            input.value = "Hello mom, I reached the office safely and will be home by 7 PM today.";
-            runScamCheck();
-        });
-    }
-
-    if (btnClear) {
-        btnClear.addEventListener('click', () => {
-            input.value = "";
-            resultBox.style.display = "none";
-            coPilotSection.style.display = "none";
-        });
-    }
-
-    if (btnCheck) {
-        btnCheck.addEventListener('click', runScamCheck);
-    }
-
-    async function runScamCheck() {
-        const query = input.value.trim();
-        if (!query) {
-            alert("Please enter a phone number, UPI ID, or paste a message to analyze.");
-            return;
+    tabBtns.forEach(b => {
+        if (b.getAttribute('data-tab') === targetId) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
         }
+    });
 
-        btnCheck.innerText = "Analyzing Threat...";
-        btnCheck.disabled = true;
+    tabPanes.forEach(p => {
+        if (p.id === targetId) {
+            p.classList.add('active');
+        } else {
+            p.classList.remove('active');
+        }
+    });
+
+    if (targetId === 'tab-trends') {
+        fetchTrendsData();
+    }
+}
+
+// 2. Tab 1: Scam Checker & Citizen Co-Pilot
+function initTab1Checker() {
+    const quickInput = document.getElementById('quick-search-input');
+    const quickBtn = document.getElementById('quick-search-btn');
+    const chipUpi = document.getElementById('chip-scam-upi');
+    const chipMsg = document.getElementById('chip-scam-msg');
+
+    const scamMsgInput = document.getElementById('scam-msg-input');
+    const analyzeBtn = document.getElementById('analyze-msg-btn');
+    const clearBtn = document.getElementById('btn-clear-tab1');
+
+    const placeholder = document.getElementById('result-placeholder');
+    const activeContent = document.getElementById('result-active-content');
+    const riskTitle = document.getElementById('risk-banner-title');
+    const riskPill = document.getElementById('risk-score-pill');
+    const riskGuidance = document.getElementById('risk-banner-guidance');
+    const extUpi = document.getElementById('ext-upi-val');
+    const extPhone = document.getElementById('ext-phone-val');
+    const extBank = document.getElementById('ext-bank-val');
+
+    const btnGenBait = document.getElementById('btn-generate-bait');
+    const btnSendHoneypot = document.getElementById('btn-send-to-honeypot');
+    const baitModal = document.getElementById('bait-preview-modal');
+    const baitImg = document.getElementById('bait-receipt-img');
+    const btnDownloadImg = document.getElementById('btn-download-bait-img');
+    const btnCopyBaitText = document.getElementById('btn-copy-bait-text');
+    const copyToast = document.getElementById('bait-copy-toast');
+
+    let latestBaitData = null;
+
+    // Quick chips
+    if (chipUpi) {
+        chipUpi.addEventListener('click', () => {
+            quickInput.value = 'bijli.board.pay@ybl';
+            runLookup(quickInput.value);
+        });
+    }
+
+    if (chipMsg) {
+        chipMsg.addEventListener('click', () => {
+            scamMsgInput.value = 'Dear Consumer, Your Electricity power will be disconnected tonight 9:30 PM from power office because your previous month bill was not updated. Please immediately contact our officer at 9876543210 or pay Rs 45 on UPI bijli.board.pay@ybl.';
+            runLookup(scamMsgInput.value);
+        });
+    }
+
+    if (quickBtn) {
+        quickBtn.addEventListener('click', () => {
+            if (!quickInput.value.trim()) {
+                alert('Please enter a UPI ID, phone number, or bank account.');
+                return;
+            }
+            runLookup(quickInput.value.trim());
+        });
+    }
+
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', () => {
+            if (!scamMsgInput.value.trim()) {
+                alert('Please paste a suspicious message to analyze.');
+                return;
+            }
+            runLookup(scamMsgInput.value.trim());
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            quickInput.value = '';
+            scamMsgInput.value = '';
+            placeholder.style.display = 'block';
+            activeContent.style.display = 'none';
+            baitModal.style.display = 'none';
+        });
+    }
+
+    async function runLookup(queryText) {
+        analyzeBtn.innerText = 'Analyzing Threat...';
+        analyzeBtn.disabled = true;
 
         try {
             const resp = await fetch('/api/checker/lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query })
+                body: JSON.stringify({ query: queryText })
             });
             const data = await resp.json();
 
-            renderCheckResult(data);
+            placeholder.style.display = 'none';
+            activeContent.style.display = 'block';
+
+            const isScam = data.threat_level === 'HIGH_DANGER' || data.risk_score >= 50;
+
+            if (isScam) {
+                riskTitle.innerText = `🚨 ${data.risk_score}% Scam Risk — ${data.category}`;
+                riskPill.innerText = `HIGH RISK (${data.risk_score}/100)`;
+                riskPill.className = 'badge-mono badge-mono-red';
+                riskGuidance.innerText = data.action_guidance;
+            } else {
+                riskTitle.innerText = `✅ Low Threat — ${data.category}`;
+                riskPill.innerText = `CLEAN (${data.risk_score}/100)`;
+                riskPill.className = 'badge-mono badge-mono-blue';
+                riskGuidance.innerText = data.action_guidance;
+            }
+
+            const upis = data.extracted_entities.upis || [];
+            extUpi.innerText = upis.length > 0 ? upis.join(', ') : (data.matched_record ? data.matched_record.identifier_value : 'None yet (Ask scammer for UPI)');
+            
+            const phones = data.extracted_entities.phones || [];
+            extPhone.innerText = phones.length > 0 ? phones.join(', ') : '+91 98765 43210';
+            
+            extBank.innerText = 'Pending Bait Extraction';
+
         } catch (err) {
-            console.error("Check Error:", err);
-            alert("Could not complete scam check. Please ensure backend server is running.");
+            console.error('Scam Lookup Error:', err);
+            alert('Lookup failed. Check that backend server is running.');
         } finally {
-            btnCheck.innerText = currentLanguage === 'hi' ? "खतरे की जांच करें" : "Check Threat Level";
-            btnCheck.disabled = false;
+            analyzeBtn.innerText = currentLanguage === 'hi' ? '🛡️ जांचें कि क्या यह स्कैम है' : '🛡️ Check If This Is a Scam';
+            analyzeBtn.disabled = false;
         }
     }
 
-    function renderCheckResult(data) {
-        resultBox.style.display = "block";
-        const isDanger = data.threat_level === 'HIGH_DANGER' || data.risk_score >= 60;
-        resultBox.className = `result-card ${isDanger ? 'danger' : 'clean'}`;
+    // Co-Pilot Counter Bait Generator
+    if (btnGenBait) {
+        btnGenBait.addEventListener('click', async () => {
+            btnGenBait.innerText = 'Generating High-Res Screenshot...';
+            btnGenBait.disabled = true;
 
-        let extractedList = [];
-        if (data.extracted_entities.upis && data.extracted_entities.upis.length > 0) {
-            extractedList.push(`<strong>Extracted UPI:</strong> ${data.extracted_entities.upis.join(', ')}`);
-        }
-        if (data.extracted_entities.phones && data.extracted_entities.phones.length > 0) {
-            extractedList.push(`<strong>Contact Phone:</strong> ${data.extracted_entities.phones.join(', ')}`);
-        }
-
-        resultBox.innerHTML = `
-            <div class="result-title">
-                ${isDanger ? '🚨 HIGH THREAT SCAM DETECTED' : '✅ NO ACTIVE THREAT DETECTED'} 
-                <span style="font-size: 0.85rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; background: ${isDanger ? '#fee2e2' : '#dcfce7'}; color: ${isDanger ? '#dc2626' : '#166534'};">
-                    Risk Score: ${data.risk_score}/100
-                </span>
-            </div>
-            <div style="margin-top: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #1e293b;">
-                Category: <span style="color: ${isDanger ? '#b91c1c' : '#047857'};">${data.category}</span>
-            </div>
-            <p style="margin-top: 0.4rem; font-size: 0.88rem; color: #334155; line-height: 1.5;">
-                ${data.action_guidance}
-            </p>
-            ${extractedList.length > 0 ? `
-                <div style="margin-top: 0.6rem; padding: 0.6rem; background: rgba(255,255,255,0.7); border-radius: 6px; font-size: 0.85rem;">
-                    ${extractedList.join(' | ')}
-                </div>
-            ` : ''}
-        `;
-
-        if (data.counter_bait_available) {
-            coPilotSection.style.display = "block";
-        } else {
-            coPilotSection.style.display = "none";
-        }
-    }
-}
-
-// 3. Citizen Co-Pilot Counter Bait Generator
-function initCoPilotBait() {
-    const btnGen = document.getElementById('btnGenerateBait');
-    const baitOutput = document.getElementById('baitOutputContainer');
-    const baitImg = document.getElementById('baitImageDisplay');
-    const baitText = document.getElementById('baitRecommendedText');
-    const btnCopy = document.getElementById('btnCopyBaitText');
-
-    if (btnGen) {
-        btnGen.addEventListener('click', async () => {
-            btnGen.innerText = "Generating Synthetic Limit Receipt...";
-            btnGen.disabled = true;
+            const upiTarget = extUpi.innerText.includes('@') ? extUpi.innerText : 'bijli.board.pay@ybl';
 
             try {
                 const resp = await fetch('/api/co-pilot/generate-receipt-bait', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ scammer_upi: "bijli.board.pay@ybl", amount: "450.00" })
+                    body: JSON.stringify({ scammer_upi: upiTarget, amount: '25,000' })
                 });
                 const data = await resp.json();
 
                 if (data.status === 'success') {
-                    baitOutput.style.display = "block";
+                    latestBaitData = data;
+                    baitModal.style.display = 'block';
                     baitImg.src = data.bait_image.relative_url;
-                    baitText.innerText = currentLanguage === 'hi' ? data.recommended_text_hindi : data.recommended_text_english;
+                    btnDownloadImg.href = data.bait_image.relative_url;
                 }
             } catch (err) {
-                console.error("Bait Gen Error:", err);
-                alert("Failed to generate counter-bait.");
+                console.error('Bait Generation Error:', err);
+                alert('Could not generate bait screenshot.');
             } finally {
-                btnGen.innerText = currentLanguage === 'hi' ? "UPI लिमिट स्क्रीनशॉट बेट बनाएं" : "Generate UPI Limit Counter-Bait";
-                btnGen.disabled = false;
+                btnGenBait.innerText = currentLanguage === 'hi' ? '📸 नकली \'Payment Failed\' स्क्रीनशॉट बनाएं' : '📸 Generate Fake \'Payment Failed\' Screenshot';
+                btnGenBait.disabled = false;
             }
         });
     }
 
-    if (btnCopy) {
-        btnCopy.addEventListener('click', () => {
-            navigator.clipboard.writeText(baitText.innerText);
-            btnCopy.innerText = "✓ Copied to Clipboard!";
-            setTimeout(() => {
-                btnCopy.innerText = "📋 Copy Text to Clipboard";
-            }, 2000);
+    if (btnCopyBaitText) {
+        btnCopyBaitText.addEventListener('click', () => {
+            if (!latestBaitData) return;
+            const textToCopy = currentLanguage === 'hi' ? latestBaitData.recommended_text_hindi : latestBaitData.recommended_text_english;
+            navigator.clipboard.writeText(textToCopy);
+            copyToast.style.display = 'block';
+            setTimeout(() => { copyToast.style.display = 'none'; }, 2500);
+        });
+    }
+
+    if (btnSendHoneypot) {
+        btnSendHoneypot.addEventListener('click', () => {
+            switchTab('tab-honeypot');
         });
     }
 }
 
-// 4. Honeypot Chat Console
-function initHoneypotChat() {
-    const chatBox = document.getElementById('honeypotChatBox');
-    const input = document.getElementById('honeypotInput');
-    const btnSend = document.getElementById('btnSendHoneypot');
+// 3. Tab 2: Live WhatsApp Honeypot
+function initTab2Honeypot() {
+    const chatBox = document.getElementById('live-chat-box');
+    const manualInput = document.getElementById('manual-scammer-input');
+    const btnSendManual = document.getElementById('btn-send-manual-msg');
+    const btnSimScam1 = document.getElementById('btn-sim-scam-msg');
+    const btnSimBank2 = document.getElementById('btn-sim-bank-msg');
+    const btnReset = document.getElementById('btn-reset-chat');
+    const btnTestCanary = document.getElementById('btn-test-canary-click');
+    const btnGotoTab3 = document.getElementById('btn-goto-tab3');
 
-    if (btnSend && input) {
-        btnSend.addEventListener('click', sendMessage);
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+    if (btnSimScam1) {
+        btnSimScam1.addEventListener('click', () => {
+            sendScammerMsg('Dear Consumer, Your electricity bill Rs 45 is unpaid. Pay now on bijli.board.pay@ybl or power cuts at 9:30 PM.');
         });
     }
 
-    async function sendMessage() {
-        const text = input.value.trim();
-        if (!text) return;
+    if (btnSimBank2) {
+        btnSimBank2.addEventListener('click', () => {
+            sendScammerMsg('Okay, if UPI daily limit is reached, transfer to our backup account: A/C 50200084729104 IFSC SBIN0004821 immediately.');
+        });
+    }
 
-        // Append scammer message immediately
-        const scammerBubble = document.createElement('div');
-        scammerBubble.className = 'chat-bubble scammer';
-        scammerBubble.innerText = text;
-        chatBox.appendChild(scammerBubble);
-        input.value = "";
+    if (btnSendManual && manualInput) {
+        btnSendManual.addEventListener('click', () => {
+            const txt = manualInput.value.trim();
+            if (txt) {
+                sendScammerMsg(txt);
+                manualInput.value = '';
+            }
+        });
+        manualInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && manualInput.value.trim()) {
+                sendScammerMsg(manualInput.value.trim());
+                manualInput.value = '';
+            }
+        });
+    }
+
+    async function sendScammerMsg(text) {
+        const scamBubble = document.createElement('div');
+        scamBubble.className = 'wa-bubble-scammer';
+        scamBubble.innerText = text;
+        chatBox.appendChild(scamBubble);
         chatBox.scrollTop = chatBox.scrollHeight;
-
-        btnSend.disabled = true;
 
         try {
             const resp = await fetch('/api/honeypot/send-message', {
@@ -232,85 +273,73 @@ function initHoneypotChat() {
             if (data.status === 'success' && data.decoy_response) {
                 setTimeout(() => {
                     const decoyBubble = document.createElement('div');
-                    decoyBubble.className = 'chat-bubble decoy';
+                    decoyBubble.className = 'wa-bubble-decoy';
                     decoyBubble.innerText = data.decoy_response;
                     chatBox.appendChild(decoyBubble);
                     chatBox.scrollTop = chatBox.scrollHeight;
-                }, 600);
+                }, 800);
             }
-        } catch (err) {
-            console.error("Chat Error:", err);
-        } finally {
-            btnSend.disabled = false;
+        } catch (e) {
+            console.error('Honeypot Error:', e);
         }
     }
-}
 
-// 5. Scammer Dossier & PDF Export
-function initDossierDownload() {
-    const btnDownload = document.getElementById('btnDownloadDossier');
-    const statusDiv = document.getElementById('pdfDownloadStatus');
+    if (btnReset) {
+        btnReset.addEventListener('click', () => {
+            chatBox.innerHTML = `
+                <div class="wa-bubble-system">🔒 Secure Honeypot Session Reset • Case: CASE-2026-1001</div>
+                <div class="wa-bubble-scammer">Dear Consumer, please pay Rs 45 immediately on UPI: bijli.board.pay@ybl</div>
+            `;
+        });
+    }
 
-    if (btnDownload) {
-        btnDownload.addEventListener('click', async () => {
-            btnDownload.innerText = "Generating Official 1930 PDF...";
-            btnDownload.disabled = true;
-            statusDiv.innerText = "Compiling trapped mule accounts, forensics & chat logs...";
+    if (btnTestCanary) {
+        btnTestCanary.addEventListener('click', () => {
+            window.open('/receipt/TRAP-CANARY-DEMO?case=CASE-2026-1001', '_blank');
+        });
+    }
 
-            try {
-                const resp = await fetch('/api/reports/generate-dossier', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ case_id: 'CASE-2026-1001' })
-                });
-                const data = await resp.json();
-
-                if (data.status === 'success' && data.file) {
-                    statusDiv.innerHTML = `✅ Dossier Generated: <a href="${data.file.relative_url}" target="_blank" style="color: #2563eb; font-weight: 700; text-decoration: underline;">Click here to Open / Download PDF</a>`;
-                    window.open(data.file.relative_url, '_blank');
-                }
-            } catch (err) {
-                console.error("PDF Gen Error:", err);
-                statusDiv.innerText = "Failed to generate PDF dossier.";
-            } finally {
-                btnDownload.innerText = currentLanguage === 'hi' ? "📥 आधिकारिक 1930 सबूत डोजियर (PDF) डाउनलोड करें" : "📥 Download Official 1930 Evidence Dossier (PDF)";
-                btnDownload.disabled = false;
-            }
+    if (btnGotoTab3) {
+        btnGotoTab3.addEventListener('click', () => {
+            switchTab('tab-proof');
         });
     }
 }
 
-// 6. Scam Radar Live Summary
-async function fetchScamRadarSummary() {
+// 4. Tab 3: Proof & Police PDF
+function initTab3Proof() {
+    // Handled via native anchor links to /api/reports/download-pdf
+}
+
+// 5. Tab 4: Scam Trends & Database
+async function fetchTrendsData() {
     try {
         const resp = await fetch('/api/reports/summary');
-        const result = await resp.json();
+        const res = await resp.json();
 
-        if (result.status === 'success' && result.data) {
-            const d = result.data;
-            const statBlacklisted = document.getElementById('statBlacklisted');
-            const statReports = document.getElementById('statReports');
-            const statTrapped = document.getElementById('statTrapped');
+        if (res.status === 'success' && res.data) {
+            const d = res.data;
+            const kpiAttempts = document.getElementById('kpi-attempts');
+            const kpiBlacklisted = document.getElementById('kpi-blacklisted');
+            const kpiMules = document.getElementById('kpi-mules');
 
-            if (statBlacklisted) statBlacklisted.innerText = d.total_blacklisted_accounts;
-            if (statReports) statReports.innerText = d.total_citizen_reports;
-            if (statTrapped) statTrapped.innerText = d.scammer_mules_neutralized;
+            if (kpiAttempts) kpiAttempts.innerText = d.total_citizen_reports;
+            if (kpiBlacklisted) kpiBlacklisted.innerText = d.total_blacklisted_accounts;
+            if (kpiMules) kpiMules.innerText = d.scammer_mules_neutralized;
 
-            // Render Blacklist Table
-            const tbody = document.getElementById('blacklistTableBody');
+            const tbody = document.getElementById('trends-blacklist-tbody');
             if (tbody && d.blacklist) {
                 tbody.innerHTML = d.blacklist.map(item => `
                     <tr>
-                        <td style="font-weight: 700; color: #0f172a; font-family: monospace;">${item.identifier_value}</td>
-                        <td><span class="badge-pill badge-${item.identifier_type.toLowerCase()}">${item.identifier_type}</span></td>
+                        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #DC2626;">${item.identifier_value}</td>
+                        <td><span class="badge-mono" style="background:#F1F5F9; color:#0F172A;">${item.identifier_type}</span></td>
                         <td>${item.scam_category}</td>
-                        <td style="font-weight: 700; color: #dc2626;">${item.risk_score}/100</td>
-                        <td><strong>${item.reports_count}</strong> reports</td>
+                        <td style="font-weight: 800; color: #DC2626;">${item.risk_score}%</td>
                     </tr>
                 `).join('');
             }
         }
-    } catch (err) {
-        console.error("Radar Summary Fetch Error:", err);
+    } catch (e) {
+        console.error('Error fetching trends:', e);
     }
 }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
@@ -11,25 +11,34 @@ router = APIRouter(prefix="/api/co-pilot", tags=["Citizen Co-Pilot"])
 
 class GenerateBaitRequest(BaseModel):
     scammer_upi: Optional[str] = "bijli.board.pay@ybl"
-    amount: Optional[str] = "450.00"
+    amount: Optional[str] = "25,000"
     case_id: Optional[str] = "CASE-2026-1001"
+
+@router.get("/fake-receipt")
+def get_fake_receipt(
+    upi: str = Query(default="bijli.board.pay@ybl"),
+    amount: str = Query(default="25,000"),
+    case_id: str = Query(default="CASE-2026-1001")
+):
+    """Generates and directly returns the PNG image for the fake Payment Failed receipt."""
+    result = generate_upi_limit_receipt(scammer_upi=upi, amount=amount)
+    return FileResponse(result["filepath"], media_type="image/png", filename=result["filename"])
 
 @router.post("/generate-receipt-bait")
 def create_receipt_bait(req: GenerateBaitRequest):
-    """Generates a realistic UPI Daily Limit Reached screenshot to prompt the scammer for backup accounts."""
-    result = generate_upi_limit_receipt(scammer_upi=req.scammer_upi or "bijli.board.pay@ybl", amount=req.amount or "450.00")
+    """Generates a realistic UPI Daily Limit Reached screenshot and ready-to-copy Hinglish text."""
+    result = generate_upi_limit_receipt(scammer_upi=req.scammer_upi or "bijli.board.pay@ybl", amount=req.amount or "25,000")
     
-    # Generate a verification trap code
     trap_code = f"TRAP-{uuid.uuid4().hex[:6].upper()}"
-    trap_url = f"/verify_receipt.html?code={trap_code}&case={req.case_id}"
+    trap_url = f"/receipt/{trap_code}?case={req.case_id}"
     
     return {
         "status": "success",
         "bait_image": result,
         "trap_code": trap_code,
         "trap_url": trap_url,
-        "recommended_text_english": f"Sir, I tried sending Rs {req.amount or '450'} via UPI but my bank returned a 'Daily Limit Exceeded' error. Here is the transaction receipt screenshot. Please send your secondary Bank Account Number, IFSC, or alternative UPI ID immediately so I can transfer without delay.",
-        "recommended_text_hindi": f"सर, मैंने UPI से Rs {req.amount or '450'} भेजने की कोशिश की लेकिन 'Daily Limit Exceeded' आ गया। ये रहा रसीद का स्क्रीनशॉट। कृपया अपना दूसरा बैंक खाता नंबर और IFSC या दूसरा UPI ID भेजें ताकि मैं तुरंत ट्रांसफर कर सकूं।"
+        "recommended_text_english": f"Sir, I tried sending ₹{req.amount or '25,000'} via UPI but my bank says 'NPCI Error: U16 Daily Inward Limit Reached' for your UPI ID ({req.scammer_upi or 'bijli.board.pay@ybl'}). Screenshot attached. Please immediately send your backup Bank Account Number + IFSC code or secondary UPI so I can complete payment without delay.",
+        "recommended_text_hindi": f"सर, मैंने ₹{req.amount or '25,000'} UPI से भेजने की कोशिश की लेकिन आपके UPI ID ({req.scammer_upi or 'bijli.board.pay@ybl'}) पर 'Daily Limit Exceeded (U16)' का एरर आ गया। स्क्रीनशॉट संलग्न है। कृपया तुरंत अपना दूसरा बैकअप बैंक खाता नंबर और IFSC कोड भेजें ताकि मैं बिना रुकावट ट्रांसफर कर सकूं।"
     }
 
 @router.post("/log-trap-visit")
@@ -38,19 +47,26 @@ async def log_trap_visit(request: Request):
     data = await request.json()
     case_id = data.get("case_id", "CASE-2026-1001")
     trap_code = data.get("trap_code", "TRAP-AUTO")
-    client_ip = request.client.host if request.client else "127.0.0.1"
-    user_agent = request.headers.get("user-agent", "Unknown Device")
     
-    # Simple OS detection
-    device_os = "Unknown Mobile/Desktop"
+    # Extract client IP
+    client_ip = request.headers.get("x-forwarded-for")
+    if client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        
+    user_agent = request.headers.get("user-agent", "Mozilla/5.0 Android Device")
+    
+    # OS detection
+    device_os = "Unknown Device"
     if "Android" in user_agent:
-        device_os = "Android Smartphone"
+        device_os = "Android Smartphone (Redmi / Vivo)"
     elif "iPhone" in user_agent or "iOS" in user_agent:
         device_os = "Apple iPhone (iOS)"
     elif "Windows" in user_agent:
         device_os = "Windows PC"
     elif "Mac" in user_agent:
-        device_os = "Mac OS"
+        device_os = "Macintosh OS"
     elif "Linux" in user_agent:
         device_os = "Linux System"
         
