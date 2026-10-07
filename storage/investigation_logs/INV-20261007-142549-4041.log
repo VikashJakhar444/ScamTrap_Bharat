@@ -1,0 +1,234 @@
+==============================================================================
+SCAMTRAP BHARAT — INVESTIGATION RECORD
+==============================================================================
+
+------------------------------------------------------------------------------
+SECTION 1 — INPUT (raw vs de-obfuscated)
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-142549-4041
+case_id: INV-20261007-142549-4041
+input_type: IMAGE_OCR
+input_sha256: b58656c33ef3c7512fc165812ed9737685c1ffffed8f816be3cb5f9b92f2ff99
+input_bytes: 89
+raw_input: URGENT: bijli power disconnect tonight
+Call 9876543210 pay Rs 1450 to
+bijli.board.pay@ybl
+deobfuscated_text: URGENT: bijli power disconnect tonight
+Call 9876543210 pay Rs 1450 to
+bijli.board.pay@ybl
+deobfuscation_changes:
+  (none)
+transcription: None
+ocr_text: URGENT: bijli power disconnect tonight
+Call 9876543210 pay Rs 1450 to
+bijli.board.pay@ybl
+qr_payloads:
+  (none)
+client_ip: 127.0.0.1
+captured_at_ist: 2026-10-07T14:25:49.623028+05:30
+
+
+------------------------------------------------------------------------------
+SECTION 2 — OSINT LAYERS (five independent probes)
+------------------------------------------------------------------------------
+layer_count: 5
+layers:
+  - layer: 1
+    name: Live Bank & Authority Verification
+    score: 45
+    flags:
+      - Authority impersonation: sender claims electricity but money is being collected on a personal UPI handle (bijli.board.pay@ybl).
+    evidence:
+      ifsc:
+        (none)
+      upi_authority:
+        claimed:
+          - electricity
+        collecting_on:
+          - bijli.board.pay@ybl
+        contradiction: True
+  - layer: 2
+    name: Digital Footprint Correlation
+    score: 100
+    flags:
+      - Consumer UPI handle bijli.board.pay@ybl is styled to look institutional — personal handles cannot be official organisation collection accounts.
+      - bijli.board.pay@ybl is already reported to ScamTrap Bharat (42 reports, category: Electricity Bill).
+      - Phone 9876543210 matches a reported scam number (Bank KYC).
+    evidence:
+      upis:
+        - vpa: bijli.board.pay@ybl
+          consumer_psp: True
+      cross_links:
+        - value: bijli.board.pay@ybl
+          type: UPI
+          record:
+            id: 1
+            identifier_value: bijli.board.pay@ybl
+            identifier_type: UPI
+            scam_category: Electricity Bill
+            risk_score: 98
+            reports_count: 42
+            first_seen: 2026-10-06 04:38:11
+            last_seen: 2026-10-06 04:38:11
+        - value: 9876543210
+          type: PHONE
+          record:
+            id: 2
+            identifier_value: 9876543210
+            identifier_type: PHONE
+            scam_category: Bank KYC
+            risk_score: 94
+            reports_count: 87
+            first_seen: 2026-10-06 04:38:11
+            last_seen: 2026-10-06 04:38:11
+  - layer: 3
+    name: Network Signal Analysis
+    score: 40
+    flags:
+      - The number reached you from a normal personal mobile connection instead of a verified business sender header.
+      - Contains a 140-series / toll-free number commonly abused for spam calls.
+    evidence:
+      phones:
+        - 9876543210
+      trai_header: False
+      spoofed_name: None
+      upstream: 127.0.0.1
+  - layer: 4
+    name: URL, Domain & Payload Reputation
+    score: 0
+    flags:
+      - No links, shorteners or remote-control payloads detected.
+    evidence:
+      urls:
+        (none)
+      malware:
+        remote_access_apps:
+          (none)
+        apk_files:
+          (none)
+  - layer: 5
+    name: Local Crowd-Sourced Intelligence
+    score: 80
+    flags:
+      - UPI bijli.board.pay@ybl already reported 42 time(s), category Electricity Bill, risk 98.
+      - PHONE 9876543210 already reported 87 time(s), category Bank KYC, risk 94.
+      - Community blacklist currently holds 9 verified identifiers.
+    evidence:
+      hits:
+        - type: UPI
+          value: bijli.board.pay@ybl
+          id: 1
+          identifier_value: bijli.board.pay@ybl
+          identifier_type: UPI
+          scam_category: Electricity Bill
+          risk_score: 98
+          reports_count: 42
+          first_seen: 2026-10-06 04:38:11
+          last_seen: 2026-10-06 04:38:11
+        - type: PHONE
+          value: 9876543210
+          id: 2
+          identifier_value: 9876543210
+          identifier_type: PHONE
+          scam_category: Bank KYC
+          risk_score: 94
+          reports_count: 87
+          first_seen: 2026-10-06 04:38:11
+          last_seen: 2026-10-06 04:38:11
+      upserted:
+        (none)
+      registry_size: 9
+
+
+------------------------------------------------------------------------------
+SECTION 3 — COGNITIVE AI DETECTIVE (four principles)
+------------------------------------------------------------------------------
+model: multilingual-MiniLMv2-L6-mnli-xnli
+ai_source: local_nli
+principles:
+  - key: p1_authority
+    name: Authority & Trust Manipulation
+    weight: 35
+    score: 35.0
+    evidence: 100
+    findings:
+      - Claims institutional authority: bijli.
+      - Contradiction: claims to be electricity yet collects on a personal UPI handle bijli.board.pay@ybl.
+  - key: p2_urgency
+    name: Urgency & Fear Engineering
+    weight: 30
+    score: 13.5
+    evidence: 45
+    findings:
+      - Manufactures a deadline so you act before thinking.
+  - key: p3_money
+    name: Money-Flow Redirection
+    weight: 20
+    score: 13.4
+    evidence: 67
+    findings:
+      - Directs a payment through UPI, QR, bank transfer or an account number.
+      - On-device AI reads it as a request to move money.
+  - key: p4_language
+    name: Linguistic & Behavioural Cues
+    weight: 15
+    score: 2.4
+    evidence: 16
+    findings:
+      - On-device AI reads a request for an OTP or a password in it.
+weighted_score: 64
+prompt_injection_detected: False
+injection_matches:
+  (none)
+
+
+------------------------------------------------------------------------------
+SECTION 4 — VERDICT & CITIZEN GUIDANCE
+------------------------------------------------------------------------------
+threat_level: HIGH_DANGER
+final_score: 85
+scam_category: Electricity Bill
+primary_category: Electricity Bill
+is_known_scam: True
+blacklist_hits:
+  - identifier_type: UPI
+    identifier_value: bijli.board.pay@ybl
+    scam_category: Electricity Bill
+    risk_score: 98
+    reports_count: 42
+  - identifier_type: PHONE
+    identifier_value: 9876543210
+    scam_category: Bank KYC
+    risk_score: 94
+    reports_count: 87
+verified_bank: None
+citizen_summary: Identified Scam (score 64/100). Claims institutional authority: bijli.
+citizen_action: Verify independently — call the bank or department on a number you find yourself, never the one in the message. Do not install anything.
+counter_bait_available: True
+
+
+------------------------------------------------------------------------------
+SECTION 5 — AUDIT & INTEGRITY
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-142549-4041
+case_id: INV-20261007-142549-4041
+client_ip: 127.0.0.1
+input_type: IMAGE_OCR
+input_sha256: b58656c33ef3c7512fc165812ed9737685c1ffffed8f816be3cb5f9b92f2ff99
+is_scammer_probing: False
+probe_recent_count: 4
+rate_limited: False
+prompt_injection_detected: False
+ai_source: local_nli
+model: multilingual-MiniLMv2-L6-mnli-xnli
+upload_validation:
+  ok: True
+  reason: 
+  format: PNG
+exec_disguise_detected: False
+upserted_identifiers:
+  (none)
+log_written_at_ist: 2026-10-07T14:25:49.623028+05:30
+integrity_sha256: f28bb56fdf8fecca998db1cf540d2d368748af0afdc5956f98f38c9785a55327
+log_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-142549-4041.log
+json_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-142549-4041.json

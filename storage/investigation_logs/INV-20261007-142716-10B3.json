@@ -1,0 +1,168 @@
+{
+  "input": {
+    "investigation_id": "INV-20261007-142716-10B3",
+    "case_id": "INV-20261007-142716-10B3",
+    "input_type": "VOICE_AUDIO",
+    "input_sha256": "ac1960abb2ed32fda18234ee068127eb73017a00caeb1bc5db747ea49eae0a87",
+    "input_bytes": 8,
+    "raw_input": "note.wav",
+    "deobfuscated_text": "note.wav",
+    "deobfuscation_changes": [],
+    "transcription": null,
+    "ocr_text": null,
+    "qr_payloads": [],
+    "client_ip": "127.0.0.1",
+    "captured_at_ist": "2026-10-07T14:26:35.274891+05:30"
+  },
+  "layers": {
+    "layer_count": 5,
+    "layers": [
+      {
+        "layer": 1,
+        "name": "Live Bank & Authority Verification",
+        "score": 0,
+        "flags": [],
+        "evidence": {
+          "ifsc": [],
+          "upi_authority": {
+            "claimed": [],
+            "collecting_on": [],
+            "contradiction": false
+          }
+        }
+      },
+      {
+        "layer": 2,
+        "name": "Digital Footprint Correlation",
+        "score": 0,
+        "flags": [
+          "No established links found in the local footprint registry."
+        ],
+        "evidence": {
+          "upis": [],
+          "cross_links": []
+        }
+      },
+      {
+        "layer": 3,
+        "name": "Network Signal Analysis",
+        "score": 0,
+        "flags": [
+          "Sender appears to be an ordinary mobile connection with no known spam markers."
+        ],
+        "evidence": {
+          "phones": [],
+          "trai_header": false,
+          "spoofed_name": null,
+          "upstream": "127.0.0.1"
+        }
+      },
+      {
+        "layer": 4,
+        "name": "URL, Domain & Payload Reputation",
+        "score": 0,
+        "flags": [
+          "No links, shorteners or remote-control payloads detected."
+        ],
+        "evidence": {
+          "urls": [],
+          "malware": {
+            "remote_access_apps": [],
+            "apk_files": []
+          }
+        }
+      },
+      {
+        "layer": 5,
+        "name": "Local Crowd-Sourced Intelligence",
+        "score": 0,
+        "flags": [
+          "No matches in the community blacklist yet — this input was still analysed.",
+          "Community blacklist currently holds 9 verified identifiers."
+        ],
+        "evidence": {
+          "hits": [],
+          "upserted": [],
+          "registry_size": 9
+        }
+      }
+    ]
+  },
+  "ai": {
+    "model": "local_engine",
+    "ai_source": "local_engine",
+    "principles": [
+      {
+        "key": "p1_authority",
+        "name": "Authority & Trust Manipulation",
+        "weight": 35,
+        "score": 0.0,
+        "evidence": 0,
+        "findings": []
+      },
+      {
+        "key": "p2_urgency",
+        "name": "Urgency & Fear Engineering",
+        "weight": 30,
+        "score": 0.0,
+        "evidence": 0,
+        "findings": []
+      },
+      {
+        "key": "p3_money",
+        "name": "Money-Flow Redirection",
+        "weight": 20,
+        "score": 0.0,
+        "evidence": 0,
+        "findings": []
+      },
+      {
+        "key": "p4_language",
+        "name": "Linguistic & Behavioural Cues",
+        "weight": 15,
+        "score": 0.0,
+        "evidence": 0,
+        "findings": []
+      }
+    ],
+    "weighted_score": 0,
+    "prompt_injection_detected": false,
+    "injection_matches": []
+  },
+  "verdict": {
+    "threat_level": "LOW",
+    "final_score": 0,
+    "scam_category": "No Direct Threat Found",
+    "primary_category": "No Direct Threat Found",
+    "is_known_scam": false,
+    "blacklist_hits": [],
+    "verified_bank": null,
+    "citizen_summary": "No Direct Threat Found (score 0/100). No strong signal was found.",
+    "citizen_action": "No immediate threat detected — still never share an OTP or install an app from a chat.",
+    "counter_bait_available": false
+  },
+  "audit": {
+    "investigation_id": "INV-20261007-142716-10B3",
+    "case_id": "INV-20261007-142716-10B3",
+    "client_ip": "127.0.0.1",
+    "input_type": "VOICE_AUDIO",
+    "input_sha256": "ac1960abb2ed32fda18234ee068127eb73017a00caeb1bc5db747ea49eae0a87",
+    "is_scammer_probing": false,
+    "probe_recent_count": 5,
+    "rate_limited": false,
+    "prompt_injection_detected": false,
+    "ai_source": "local_engine",
+    "model": "local_engine",
+    "upload_validation": {
+      "ok": true,
+      "reason": "",
+      "format": "WAV"
+    },
+    "exec_disguise_detected": false,
+    "upserted_identifiers": [],
+    "log_written_at_ist": "2026-10-07T14:26:35.274891+05:30",
+    "integrity_sha256": "f5f46b02fb9595db57b9a9bfa91f087be56cdede11258667550144721bdc0ddf",
+    "log_path": "C:\\Users\\vikas\\Desktop\\ScamTrap_Bharat\\storage\\investigation_logs\\INV-20261007-142716-10B3.log",
+    "json_path": "C:\\Users\\vikas\\Desktop\\ScamTrap_Bharat\\storage\\investigation_logs\\INV-20261007-142716-10B3.json"
+  }
+}

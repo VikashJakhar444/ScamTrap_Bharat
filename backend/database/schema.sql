@@ -66,3 +66,28 @@ CREATE TABLE IF NOT EXISTS investigation_audits (
 CREATE INDEX IF NOT EXISTS idx_identifier_val ON scam_identifiers (identifier_value);
 CREATE INDEX IF NOT EXISTS idx_messages_case ON messages (case_id);
 CREATE INDEX IF NOT EXISTS idx_canary_case ON canary_logs (case_id);
+
+-- Tab 2 · Cloud AI Node: an autonomous decoy conversation with one scammer.
+CREATE TABLE IF NOT EXISTS cloud_sessions (
+    case_id TEXT PRIMARY KEY,
+    scammer_phone TEXT,
+    relation TEXT,
+    fake_name TEXT,
+    excuse TEXT,
+    scam_category TEXT,
+    persona_details TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'CLOSED')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cloud_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id TEXT NOT NULL,
+    sender_role TEXT NOT NULL CHECK (sender_role IN ('scammer', 'ai')),
+    message_text TEXT NOT NULL,
+    send_image INTEGER NOT NULL DEFAULT 0,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (case_id) REFERENCES cloud_sessions (case_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_cloud_msg_case ON cloud_messages (case_id);

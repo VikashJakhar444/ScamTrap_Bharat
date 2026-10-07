@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Request, Query
+﻿from fastapi import APIRouter, Request, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
+from backend.services.reply_ai import build_copilot_system, generate_reply
 from backend.services.image_bait import generate_upi_limit_receipt
 from backend.database.db import get_db_connection
 from backend.config import GENERATED_BAITS_DIR
@@ -94,4 +95,31 @@ async def log_trap_visit(request: Request):
             "os": device_os,
             "user_agent": user_agent
         }
+    }
+
+
+class NextReplyRequest(BaseModel):
+    """Tab 2 · Co-Pilot Mode - draft the citizen's next safe WhatsApp reply."""
+    scam_category: Optional[str] = "General Suspicious"
+    chat_history: Optional[List[Dict[str, str]]] = None
+    scammer_new_message: str
+    scammer_upi: Optional[str] = None
+    case_context: Optional[Dict[str, Any]] = None
+
+
+@router.post("/next-reply")
+def next_reply(req: NextReplyRequest):
+    text = (req.scammer_new_message or "").strip()
+    if not text:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="scammer_new_message is required")
+
+    system = build_copilot_system(req.scam_category or "General Suspicious", req.case_context)
+    result = generate_reply(system, chat_history=req.chat_history, user_message=text)
+    return {
+        "status": "success",
+        "suggested_reply": result["reply"],
+        "send_image": result["send_image"],
+        "provider": result["provider"],
+        "elapsed_ms": result["elapsed_ms"],
     }

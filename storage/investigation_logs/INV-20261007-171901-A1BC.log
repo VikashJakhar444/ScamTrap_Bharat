@@ -1,0 +1,197 @@
+==============================================================================
+SCAMTRAP BHARAT — INVESTIGATION RECORD
+==============================================================================
+
+------------------------------------------------------------------------------
+SECTION 1 — INPUT (raw vs de-obfuscated)
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-171901-A1BC
+case_id: INV-20261007-171901-A1BC
+input_type: TEXT
+input_sha256: cfbd94dad5af74705e54c72dbfd0ac267e67309d54e074962b7d1d9f1897295c
+input_bytes: 135
+raw_input: Urgent: your electricity bill of Rs 499 is pending. Pay today via UPI to bijli.board.pay@ybl or your supply will be cut. - Bijli Vibhag
+deobfuscated_text: Urgent: your electricity bill of Rs 499 is pending. Pay today via UPI to bijli.board.pay@ybl or your supply will be cut. - Bijli Vibhag
+deobfuscation_changes:
+  (none)
+transcription: None
+ocr_text: None
+qr_payloads:
+  (none)
+client_ip: 127.0.0.1
+captured_at_ist: 2026-10-07T17:19:01.121323+05:30
+
+
+------------------------------------------------------------------------------
+SECTION 2 — OSINT LAYERS (five independent probes)
+------------------------------------------------------------------------------
+layer_count: 5
+layers:
+  - layer: 1
+    name: Live Bank & Authority Verification
+    score: 45
+    flags:
+      - Authority impersonation: sender claims electricity but money is being collected on a personal UPI handle (bijli.board.pay@ybl).
+    evidence:
+      ifsc:
+        (none)
+      upi_authority:
+        claimed:
+          - electricity
+        collecting_on:
+          - bijli.board.pay@ybl
+        contradiction: True
+  - layer: 2
+    name: Digital Footprint Correlation
+    score: 70
+    flags:
+      - Consumer UPI handle bijli.board.pay@ybl is styled to look institutional — personal handles cannot be official organisation collection accounts.
+      - bijli.board.pay@ybl is already reported to ScamTrap Bharat (46 reports, category: Electricity Bill).
+    evidence:
+      upis:
+        - vpa: bijli.board.pay@ybl
+          consumer_psp: True
+      cross_links:
+        - value: bijli.board.pay@ybl
+          type: UPI
+          record:
+            id: 1
+            identifier_value: bijli.board.pay@ybl
+            identifier_type: UPI
+            scam_category: Electricity Bill
+            risk_score: 98
+            reports_count: 46
+            first_seen: 2026-10-06 04:38:11
+            last_seen: 2026-10-07 11:47:59
+  - layer: 3
+    name: Network Signal Analysis
+    score: 0
+    flags:
+      - Sender appears to be an ordinary mobile connection with no known spam markers.
+    evidence:
+      phones:
+        (none)
+      trai_header: False
+      spoofed_name: None
+      upstream: 127.0.0.1
+  - layer: 4
+    name: URL, Domain & Payload Reputation
+    score: 0
+    flags:
+      - No links, shorteners or remote-control payloads detected.
+    evidence:
+      urls:
+        (none)
+      malware:
+        remote_access_apps:
+          (none)
+        apk_files:
+          (none)
+  - layer: 5
+    name: Local Crowd-Sourced Intelligence
+    score: 40
+    flags:
+      - UPI bijli.board.pay@ybl already reported 46 time(s), category Electricity Bill, risk 98.
+      - Community blacklist currently holds 10 verified identifiers.
+    evidence:
+      hits:
+        - type: UPI
+          value: bijli.board.pay@ybl
+          id: 1
+          identifier_value: bijli.board.pay@ybl
+          identifier_type: UPI
+          scam_category: Electricity Bill
+          risk_score: 98
+          reports_count: 46
+          first_seen: 2026-10-06 04:38:11
+          last_seen: 2026-10-07 11:47:59
+      upserted:
+        (none)
+      registry_size: 10
+
+
+------------------------------------------------------------------------------
+SECTION 3 — COGNITIVE AI DETECTIVE (four principles)
+------------------------------------------------------------------------------
+model: multilingual-MiniLMv2-L6-mnli-xnli
+ai_source: local_nli
+principles:
+  - key: p1_authority
+    name: Authority & Trust Manipulation
+    weight: 35
+    score: 35.0
+    evidence: 100
+    findings:
+      - Claims institutional authority: bijli, Bijli.
+      - Contradiction: claims to be electricity yet collects on a personal UPI handle bijli.board.pay@ybl.
+  - key: p2_urgency
+    name: Urgency & Fear Engineering
+    weight: 30
+    score: 13.5
+    evidence: 45
+    findings:
+      - Manufactures a deadline so you act before thinking.
+  - key: p3_money
+    name: Money-Flow Redirection
+    weight: 20
+    score: 14.8
+    evidence: 74
+    findings:
+      - Directs a payment through UPI, QR, bank transfer or an account number.
+      - On-device AI reads it as a request to move money.
+  - key: p4_language
+    name: Linguistic & Behavioural Cues
+    weight: 15
+    score: 0.0
+    evidence: 0
+    findings:
+      (none)
+weighted_score: 63
+prompt_injection_detected: False
+injection_matches:
+  (none)
+
+
+------------------------------------------------------------------------------
+SECTION 4 — VERDICT & CITIZEN GUIDANCE
+------------------------------------------------------------------------------
+threat_level: HIGH_DANGER
+final_score: 85
+scam_category: Electricity Bill
+primary_category: Electricity Bill
+is_known_scam: True
+blacklist_hits:
+  - identifier_type: UPI
+    identifier_value: bijli.board.pay@ybl
+    scam_category: Electricity Bill
+    risk_score: 98
+    reports_count: 46
+verified_bank: None
+citizen_summary: Identified Scam (score 63/100). Claims institutional authority: bijli, Bijli.
+citizen_action: Verify independently — call the bank or department on a number you find yourself, never the one in the message. Do not install anything.
+counter_bait_available: True
+
+
+------------------------------------------------------------------------------
+SECTION 5 — AUDIT & INTEGRITY
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-171901-A1BC
+case_id: INV-20261007-171901-A1BC
+client_ip: 127.0.0.1
+input_type: TEXT
+input_sha256: cfbd94dad5af74705e54c72dbfd0ac267e67309d54e074962b7d1d9f1897295c
+is_scammer_probing: True
+probe_recent_count: 3
+rate_limited: False
+prompt_injection_detected: False
+ai_source: local_nli
+model: multilingual-MiniLMv2-L6-mnli-xnli
+upload_validation:
+
+exec_disguise_detected: False
+upserted_identifiers:
+  (none)
+log_written_at_ist: 2026-10-07T17:19:01.121323+05:30
+integrity_sha256: 3361d7de9bf71006388e5988f73e2e4b0b12b775df1d81ed7520d74f8453ef97
+log_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-171901-A1BC.log
+json_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-171901-A1BC.json
