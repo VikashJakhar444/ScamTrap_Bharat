@@ -25,7 +25,7 @@ def _get_font(size: int, bold: bool = False):
     except Exception:
         return None
 
-def generate_upi_limit_receipt(scammer_upi: str = "bijli.board.pay@ybl", amount: str = "25,000") -> Dict[str, Any]:
+def generate_upi_limit_receipt(scammer_upi: str = "bijli.board.pay@ybl", amount: str = "25,000", sender_name: str = "Rahul Sharma") -> Dict[str, Any]:
     """
     Generates a crisp 600x960 Google Pay / PhonePe style Payment Failed screenshot.
     Includes NPCI U16 Daily Limit Exceeded warning box and asks for alternate account/IFSC.
@@ -93,7 +93,7 @@ def generate_upi_limit_receipt(scammer_upi: str = "bijli.board.pay@ybl", amount:
     details = [
         ("To Beneficiary UPI", scammer_upi),
         ("Debited From", "State Bank of India (•••• 4821)"),
-        ("Sender Account", "Verified Citizen Account (Vikas Ji)"),
+        ("Sender Account", f"Verified Citizen Account ({sender_name})"),
         ("Date & Time", cur_time),
         ("UPI Reference ID", txn_ref),
         ("NPCI Response Code", "U16_DAILY_INWARD_LIMIT_EXHAUSTED"),
@@ -124,5 +124,6 @@ def generate_upi_limit_receipt(scammer_upi: str = "bijli.board.pay@ybl", amount:
         "relative_url": f"/storage/generated_baits/{filename}",
         "txn_ref": txn_ref,
         "scammer_upi": scammer_upi,
-        "amount": clean_amt
+        "amount": clean_amt,
+        "sender_name": sender_name
     }

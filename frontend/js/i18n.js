@@ -91,6 +91,7 @@ const translations = {
     copilot_title: 'Expose their backup account',
     copilot_desc:
       'Generate a realistic “NPCI U16 daily limit reached” receipt. Sent back to the scammer, it usually makes them reveal a second bank account they did not intend to share.',
+    lbl_bait_name: 'Name',
     lbl_bait_amount: 'Amount',
     btn_gen_bait: 'Generate payment-failed screenshot',
     btn_to_honeypot: 'Hand over to the AI decoy',
@@ -421,6 +422,7 @@ const translations = {
     copilot_title: 'उनका बैकअप खाता उजागर करें',
     copilot_desc:
       'असली जैसी “NPCI U16 डेली लिमिट पहुँच गई” रसीद बनाएँ। स्कैमर को भेजने पर वह आमतौर पर वह दूसरा बैंक खाता बता देता है जो वह बताना नहीं चाहता था।',
+    lbl_bait_name: 'नाम',
     lbl_bait_amount: 'राशि',
     btn_gen_bait: 'पेमेंट फ़ेल स्क्रीनशॉट बनाएँ',
     btn_to_honeypot: 'AI डिकॉय को सौंपें',

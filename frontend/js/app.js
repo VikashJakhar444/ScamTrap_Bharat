@@ -53,7 +53,7 @@ function cacheDom() {
     'gauge-score-text', 'radial-gauge-circle', 'risk-score-pill',
     'risk-banner-box', 'risk-banner-icon', 'risk-banner-title', 'risk-banner-guidance',
     'ext-upi-val', 'ext-phone-val', 'ext-bank-val',
-    'custom-bait-amt', 'btn-generate-bait', 'btn-send-to-honeypot',
+    'custom-bait-amt', 'custom-bait-name', 'btn-generate-bait', 'btn-send-to-honeypot',
     'bait-preview-modal', 'bait-receipt-img', 'btn-download-bait-img',
     'btn-copy-bait-text', 'bait-copy-toast',
     'wa-conn-badge', 'wa-conn-text', 'node-phone', 'node-persona', 'node-mode',
@@ -724,6 +724,7 @@ async function generateBait() {
     ? ui['ext-upi-val'].textContent.split(',')[0].trim()
     : 'bijli.board.pay@ybl';
   const amount = ui['custom-bait-amt'].value.trim() || '25,000';
+  const senderName = (ui['custom-bait-name'] && ui['custom-bait-name'].value.trim()) || '';
 
   btn.disabled = true;
   label.removeAttribute('data-i18n');
@@ -733,7 +734,7 @@ async function generateBait() {
     const res = await fetch('/api/co-pilot/generate-receipt-bait', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scammer_upi: upiTarget, amount, case_id: CASE_ID })
+      body: JSON.stringify({ scammer_upi: upiTarget, amount, sender_name: senderName, case_id: CASE_ID })
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();

@@ -1,0 +1,172 @@
+==============================================================================
+SCAMTRAP BHARAT — INVESTIGATION RECORD
+==============================================================================
+
+------------------------------------------------------------------------------
+SECTION 1 — INPUT (raw vs de-obfuscated)
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-121516-B0CF
+case_id: INV-20261007-121516-B0CF
+input_type: VOICE_AUDIO
+input_sha256: ac1960abb2ed32fda18234ee068127eb73017a00caeb1bc5db747ea49eae0a87
+input_bytes: 8
+raw_input: note.wav
+deobfuscated_text: note.wav
+deobfuscation_changes:
+  (none)
+transcription: None
+ocr_text: None
+qr_payloads:
+  (none)
+client_ip: 127.0.0.1
+captured_at_ist: 2026-10-07T12:15:11.907207+05:30
+
+
+------------------------------------------------------------------------------
+SECTION 2 — OSINT LAYERS (five independent probes)
+------------------------------------------------------------------------------
+layer_count: 5
+layers:
+  - layer: 1
+    name: Live Bank & Authority Verification
+    score: 0
+    flags:
+      (none)
+    evidence:
+      ifsc:
+        (none)
+      upi_authority:
+        claimed:
+          (none)
+        collecting_on:
+          (none)
+        contradiction: False
+  - layer: 2
+    name: Digital Footprint Correlation
+    score: 0
+    flags:
+      - No established links found in the local footprint registry.
+    evidence:
+      upis:
+        (none)
+      cross_links:
+        (none)
+  - layer: 3
+    name: Network Signal Analysis
+    score: 0
+    flags:
+      - Sender appears to be an ordinary mobile connection with no known spam markers.
+    evidence:
+      phones:
+        (none)
+      trai_header: False
+      spoofed_name: None
+      upstream: 127.0.0.1
+  - layer: 4
+    name: URL, Domain & Payload Reputation
+    score: 0
+    flags:
+      - No links, shorteners or remote-control payloads detected.
+    evidence:
+      urls:
+        (none)
+      malware:
+        remote_access_apps:
+          (none)
+        apk_files:
+          (none)
+  - layer: 5
+    name: Local Crowd-Sourced Intelligence
+    score: 0
+    flags:
+      - No matches in the community blacklist yet — this input was still analysed.
+      - Community blacklist currently holds 9 verified identifiers.
+    evidence:
+      hits:
+        (none)
+      upserted:
+        (none)
+      registry_size: 9
+
+
+------------------------------------------------------------------------------
+SECTION 3 — COGNITIVE AI DETECTIVE (four principles)
+------------------------------------------------------------------------------
+model: local_engine
+ai_source: local_engine
+principles:
+  - key: p1_authority
+    name: Authority & Trust Manipulation
+    weight: 35
+    score: 0.0
+    evidence: 0
+    findings:
+      (none)
+  - key: p2_urgency
+    name: Urgency & Fear Engineering
+    weight: 30
+    score: 0.0
+    evidence: 0
+    findings:
+      (none)
+  - key: p3_money
+    name: Money-Flow Redirection
+    weight: 20
+    score: 0.0
+    evidence: 0
+    findings:
+      (none)
+  - key: p4_language
+    name: Linguistic & Behavioural Cues
+    weight: 15
+    score: 0.0
+    evidence: 0
+    findings:
+      (none)
+weighted_score: 0
+prompt_injection_detected: False
+injection_matches:
+  (none)
+
+
+------------------------------------------------------------------------------
+SECTION 4 — VERDICT & CITIZEN GUIDANCE
+------------------------------------------------------------------------------
+threat_level: LOW
+final_score: 0
+scam_category: No Direct Threat Found
+primary_category: No Direct Threat Found
+is_known_scam: False
+blacklist_hits:
+  (none)
+verified_bank: None
+citizen_summary: No Direct Threat Found (score 0/100). No strong signal was found.
+citizen_action: No immediate threat detected — still never share an OTP or install an app from a chat.
+counter_bait_available: False
+
+
+------------------------------------------------------------------------------
+SECTION 5 — AUDIT & INTEGRITY
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-121516-B0CF
+case_id: INV-20261007-121516-B0CF
+client_ip: 127.0.0.1
+input_type: VOICE_AUDIO
+input_sha256: ac1960abb2ed32fda18234ee068127eb73017a00caeb1bc5db747ea49eae0a87
+is_scammer_probing: False
+probe_recent_count: 5
+rate_limited: False
+prompt_injection_detected: False
+ai_source: local_engine
+model: local_engine
+upload_validation:
+  ok: True
+  reason: 
+  format: WAV
+exec_disguise_detected: False
+upserted_identifiers:
+  (none)
+log_written_at_ist: 2026-10-07T12:15:11.907207+05:30
+integrity_sha256: 489115a404efa951c7a3c542d0daaae5afcd64b18c0176a1b5766e3fd722e961
+log_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-121516-B0CF.log
+json_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-121516-B0CF.json

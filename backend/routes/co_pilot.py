@@ -12,23 +12,29 @@ router = APIRouter(prefix="/api/co-pilot", tags=["Citizen Co-Pilot"])
 class GenerateBaitRequest(BaseModel):
     scammer_upi: Optional[str] = "bijli.board.pay@ybl"
     amount: Optional[str] = "25,000"
+    sender_name: Optional[str] = "Rahul Sharma"
     case_id: Optional[str] = "CASE-2026-1001"
 
 @router.get("/fake-receipt")
 def get_fake_receipt(
     upi: str = Query(default="bijli.board.pay@ybl"),
     amount: str = Query(default="25,000"),
+    sender_name: str = Query(default="Rahul Sharma"),
     case_id: str = Query(default="CASE-2026-1001")
 ):
     """Generates and directly returns the PNG image for the fake Payment Failed receipt."""
-    result = generate_upi_limit_receipt(scammer_upi=upi, amount=amount)
+    result = generate_upi_limit_receipt(scammer_upi=upi, amount=amount, sender_name=sender_name)
     return FileResponse(result["filepath"], media_type="image/png", filename=result["filename"])
 
 @router.post("/generate-receipt-bait")
 @router.post("/generate-bait")          # spec §7 alias — same handler
 def create_receipt_bait(req: GenerateBaitRequest):
     """Generates a realistic UPI Daily Limit Reached screenshot and ready-to-copy Hinglish text."""
-    result = generate_upi_limit_receipt(scammer_upi=req.scammer_upi or "bijli.board.pay@ybl", amount=req.amount or "25,000")
+    result = generate_upi_limit_receipt(
+        scammer_upi=req.scammer_upi or "bijli.board.pay@ybl",
+        amount=req.amount or "25,000",
+        sender_name=(req.sender_name or "").strip() or "Rahul Sharma",
+    )
     
     trap_code = f"TRAP-{uuid.uuid4().hex[:6].upper()}"
     trap_url = f"/receipt/{trap_code}?case={req.case_id}"
