@@ -302,3 +302,84 @@ def lookup_identifier(query: str) -> Optional[Dict[str, Any]]:
         if row:
             return dict(row)
         return None
+
+
+def upsert_identifier(value: str,
+                      match_type: str,
+                      label: str = "",
+                      category: str = "General Suspicious",
+                      score: int = 70,
+                      reports: int = 1) -> bool:
+    """Crowd-sourced contribution: adds one identifier to the local blacklist.
+
+    Called by the OSINT engine (spec §3, Layer 5) once a probe crosses the
+    confidence threshold, so the community registry grows from real checks.
+    Returns True when a row was written.
+    """
+    if not value:
+        return False
+
+    if match_type == "PHONE":
+        key = normalize_digits(value, last=10)
+    elif match_type == "BANK_AC":
+        key = normalize_digits(value)
+    else:
+        key = str(value).strip()
+    if not key:
+        return False
+
+    score = max(0, min(100, int(score or 0)))
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                """INSERT INTO scam_identifiers
+                       (identifier_value, identifier_type, scam_category, risk_score, reports_count)
+                   VALUES (?, ?, ?, ?, ?)
+                   ON CONFLICT(identifier_value) DO UPDATE SET
+                       scam_category = excluded.scam_category,
+                       risk_score = MAX(risk_score, excluded.risk_score),
+                       reports_count = reports_count + excluded.reports_count,
+                       last_seen = CURRENT_TIMESTAMP""",
+                (key, match_type, category, score, reports),
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False
+
+
+def record_investigation_audit(row: Dict[str, Any]) -> bool:
+    """Writes one row to `investigation_audits` (spec §6 audit trail)."""
+    if not row:
+        return False
+    try:
+        with get_db_connection() as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO investigation_audits
+                   (investigation_id, case_id, input_type, input_sha256, client_ip,
+                    prompt_injection_detected, is_scammer_probing, rate_limited,
+                    risk_score, threat_level, scam_category, upserted_count,
+                    model_source, log_path, json_path)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    row.get("investigation_id"),
+                    row.get("case_id"),
+                    row.get("input_type", "TEXT"),
+                    row.get("input_sha256", ""),
+                    row.get("client_ip"),
+                    1 if row.get("prompt_injection_detected") else 0,
+                    1 if row.get("is_scammer_probing") else 0,
+                    1 if row.get("rate_limited") else 0,
+                    int(row.get("risk_score") or 0),
+                    row.get("threat_level"),
+                    row.get("scam_category"),
+                    int(row.get("upserted_count") or 0),
+                    row.get("model_source"),
+                    row.get("log_path"),
+                    row.get("json_path"),
+                ),
+            )
+            conn.commit()
+        return True
+    except Exception:
+        return False

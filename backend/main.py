@@ -33,6 +33,15 @@ def on_startup():
     init_db()
     print(">>> [ScamTrap Bharat] SQLite Database & Seed Data Initialized Successfully.")
 
+    # Warm the free on-device AI on a background thread so the first analyse
+    # request does not pay the model load. Failures are logged, never fatal.
+    try:
+        from backend.services import local_ai
+        if local_ai.warmup_async():
+            print(">>> [ScamTrap Bharat] Free local AI warming up in the background...")
+    except Exception as exc:                              # noqa: BLE001
+        print(">>> [ScamTrap Bharat] Free local AI warm-up skipped: %s" % exc)
+
 # Register API Routers
 app.include_router(checker_router)
 app.include_router(reports_router)
@@ -42,11 +51,17 @@ app.include_router(honeypot_router)
 # Health Check Route
 @app.get("/api/health")
 def health_check():
+    try:
+        from backend.services import local_ai
+        ai = local_ai.status()
+    except Exception as exc:                              # noqa: BLE001
+        ai = {"enabled": False, "ready": False, "error": str(exc)}
     return {
         "status": "healthy",
         "app_name": "ScamTrap Bharat",
         "sandbox_mode": SANDBOX_MODE,
-        "database": "storage/scamtrap.db (Connected)"
+        "database": "storage/scamtrap.db (Connected)",
+        "local_ai": ai
     }
 
 # Mount Storage Directory for Generated Baits & PDFs

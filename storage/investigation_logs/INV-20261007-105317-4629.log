@@ -1,0 +1,200 @@
+==============================================================================
+SCAMTRAP BHARAT — INVESTIGATION RECORD
+==============================================================================
+
+------------------------------------------------------------------------------
+SECTION 1 — INPUT (raw vs de-obfuscated)
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-105317-4629
+case_id: INV-20261007-105317-4629
+input_type: TEXT
+input_sha256: bff71bcbd80b93a4602078cc6c0b63a9606a8fd4791793b0981686e3c8abe6a5
+input_bytes: 128
+raw_input: URGENT: your bijli power will be disconnected tonight. Call and pay Rs 1450 to bijli.office@ybl immediately. Do not tell anyone.
+deobfuscated_text: URGENT: your bijli power will be disconnected tonight. Call and pay Rs 1450 to bijli.office@ybl immediately. Do not tell anyone.
+deobfuscation_changes:
+  (none)
+transcription: None
+ocr_text: None
+qr_payloads:
+  (none)
+client_ip: 127.0.0.1
+captured_at_ist: 2026-10-07T10:53:16.855074+05:30
+
+
+------------------------------------------------------------------------------
+SECTION 2 — OSINT LAYERS (five independent probes)
+------------------------------------------------------------------------------
+layer_count: 5
+layers:
+  - layer: 1
+    name: Live Bank & Authority Verification
+    score: 45
+    flags:
+      - Authority impersonation: sender claims electricity but money is being collected on a personal UPI handle (bijli.office@ybl).
+    evidence:
+      ifsc:
+        (none)
+      upi_authority:
+        claimed:
+          - electricity
+        collecting_on:
+          - bijli.office@ybl
+        contradiction: True
+  - layer: 2
+    name: Digital Footprint Correlation
+    score: 70
+    flags:
+      - Consumer UPI handle bijli.office@ybl is styled to look institutional — personal handles cannot be official organisation collection accounts.
+      - bijli.office@ybl is already reported to ScamTrap Bharat (1 reports, category: Electricity Bill Disconnection).
+    evidence:
+      upis:
+        - vpa: bijli.office@ybl
+          consumer_psp: True
+      cross_links:
+        - value: bijli.office@ybl
+          type: UPI
+          record:
+            id: 7
+            identifier_value: bijli.office@ybl
+            identifier_type: UPI
+            scam_category: Electricity Bill Disconnection
+            risk_score: 100
+            reports_count: 1
+            first_seen: 2026-10-06 09:10:38
+            last_seen: 2026-10-06 09:10:38
+  - layer: 3
+    name: Network Signal Analysis
+    score: 15
+    flags:
+      - Contains a 140-series / toll-free number commonly abused for spam calls.
+    evidence:
+      phones:
+        (none)
+      trai_header: False
+      spoofed_name: None
+      upstream: 127.0.0.1
+  - layer: 4
+    name: URL, Domain & Payload Reputation
+    score: 0
+    flags:
+      - No links, shorteners or remote-control payloads detected.
+    evidence:
+      urls:
+        (none)
+      malware:
+        remote_access_apps:
+          (none)
+        apk_files:
+          (none)
+  - layer: 5
+    name: Local Crowd-Sourced Intelligence
+    score: 40
+    flags:
+      - UPI bijli.office@ybl already reported 1 time(s), category Electricity Bill Disconnection, risk 100.
+      - Community blacklist currently holds 9 verified identifiers.
+    evidence:
+      hits:
+        - type: UPI
+          value: bijli.office@ybl
+          id: 7
+          identifier_value: bijli.office@ybl
+          identifier_type: UPI
+          scam_category: Electricity Bill Disconnection
+          risk_score: 100
+          reports_count: 1
+          first_seen: 2026-10-06 09:10:38
+          last_seen: 2026-10-06 09:10:38
+      upserted:
+        (none)
+      registry_size: 9
+
+
+------------------------------------------------------------------------------
+SECTION 3 — COGNITIVE AI DETECTIVE (four principles)
+------------------------------------------------------------------------------
+model: multilingual-MiniLMv2-L6-mnli-xnli
+ai_source: local_nli
+principles:
+  - key: p1_authority
+    name: Authority & Trust Manipulation
+    weight: 35
+    score: 35.0
+    evidence: 100
+    findings:
+      - Claims institutional authority: bijli.
+      - Contradiction: claims to be electricity yet collects on a personal UPI handle bijli.office@ybl.
+  - key: p2_urgency
+    name: Urgency & Fear Engineering
+    weight: 30
+    score: 30.0
+    evidence: 100
+    findings:
+      - Manufactures a deadline so you act before thinking.
+      - Threatens a loss — disconnection, block, fine or arrest.
+      - Deadline plus threat stacked together — classic pressure combination.
+      - Explicitly tells you to keep it from family or the bank.
+  - key: p3_money
+    name: Money-Flow Redirection
+    weight: 20
+    score: 10.8
+    evidence: 54
+    findings:
+      - Directs a payment through UPI, QR, bank transfer or an account number.
+      - On-device AI reads it as a request to move money.
+  - key: p4_language
+    name: Linguistic & Behavioural Cues
+    weight: 15
+    score: 6.0
+    evidence: 40
+    findings:
+      - Uses social-engineering triggers — OTP, screen share, install, keep quiet.
+weighted_score: 82
+prompt_injection_detected: False
+injection_matches:
+  (none)
+
+
+------------------------------------------------------------------------------
+SECTION 4 — VERDICT & CITIZEN GUIDANCE
+------------------------------------------------------------------------------
+threat_level: HIGH_DANGER
+final_score: 85
+scam_category: Electricity Bill Disconnection
+primary_category: Electricity Bill Disconnection
+is_known_scam: True
+blacklist_hits:
+  - identifier_type: UPI
+    identifier_value: bijli.office@ybl
+    scam_category: Electricity Bill Disconnection
+    risk_score: 100
+    reports_count: 1
+verified_bank: None
+citizen_summary: Identified Scam (score 82/100). Claims institutional authority: bijli.
+citizen_action: Do not pay and do not share an OTP. Block the number, and report it at cybercrime.gov.in or call 1930 within the golden hour.
+counter_bait_available: True
+
+
+------------------------------------------------------------------------------
+SECTION 5 — AUDIT & INTEGRITY
+------------------------------------------------------------------------------
+investigation_id: INV-20261007-105317-4629
+case_id: INV-20261007-105317-4629
+client_ip: 127.0.0.1
+input_type: TEXT
+input_sha256: bff71bcbd80b93a4602078cc6c0b63a9606a8fd4791793b0981686e3c8abe6a5
+is_scammer_probing: False
+probe_recent_count: 12
+rate_limited: False
+prompt_injection_detected: False
+ai_source: local_nli
+model: multilingual-MiniLMv2-L6-mnli-xnli
+upload_validation:
+
+exec_disguise_detected: False
+upserted_identifiers:
+  (none)
+log_written_at_ist: 2026-10-07T10:53:16.855074+05:30
+integrity_sha256: 17a7e6428dad0eefd27e45574a2e7004610bf4f3453acf6d581a314af1794335
+log_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-105317-4629.log
+json_path: C:\Users\vikas\Desktop\ScamTrap_Bharat\storage\investigation_logs\INV-20261007-105317-4629.json

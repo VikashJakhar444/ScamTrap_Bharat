@@ -15,8 +15,10 @@ const state = {
   summary: null,
   blacklist: [],
   selectedCase: CASE_ID,
+  activeCaseId: CASE_ID,
   latestBait: null,
-  lastVerdict: null
+  lastVerdict: null,   // normalised shape consumed by renderVerdict()
+  lastReport: null     // raw /api/checker/analyze* response (layers, principles)
 };
 
 /* --------------------------------------------------------------------------
@@ -41,8 +43,13 @@ function cacheDom() {
     'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region',
     'quick-search-input', 'quick-search-btn', 'chip-scam-upi', 'chip-scam-msg',
     'scam-msg-input', 'analyze-msg-btn', 'btn-clear-tab1',
-    'dropzone-box', 'scam-img-input', 'dropzone-filename',
+    'dropzone-box', 'scam-img-input',
+    'attach-audio-btn', 'attach-qr-btn', 'attach-status',
+    'scam-audio-input', 'qr-row', 'qr-payload-input', 'qr-analyze-btn',
     'result-side-card', 'result-placeholder', 'result-loading', 'result-active-content',
+    'verdict-meta', 'meta-model', 'meta-input', 'meta-case',
+    'principles-panel', 'principles-list',
+    'layers-panel',
     'gauge-score-text', 'radial-gauge-circle', 'risk-score-pill',
     'risk-banner-box', 'risk-banner-icon', 'risk-banner-title', 'risk-banner-guidance',
     'ext-upi-val', 'ext-phone-val', 'ext-bank-val',
@@ -63,6 +70,11 @@ function cacheDom() {
     'analyze-label', 'bait-label', 'chat-status-text'
   ].forEach((id) => { ui[id] = document.getElementById(id); });
 }
+
+/* Cache immediately: i18n.js (loaded first) fires i18n:changed from its own
+   DOMContentLoaded listener, which runs before ours — the panels below must
+   already resolve. The DOM is parsed; the script tag sits at the end of body. */
+cacheDom();
 
 /* --------------------------------------------------------------------------
    Toasts (replace every alert())
@@ -119,7 +131,7 @@ function initTabs() {
   });
 }
 
-function switchTab(targetId) {
+function switchTab(targetId, scrollEl) {
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     const active = tab.dataset.tab === targetId;
     tab.setAttribute('aria-selected', String(active));
@@ -137,14 +149,58 @@ function switchTab(targetId) {
   if (targetId === 'tab-proof') loadEvidence();
   if (targetId === 'tab-honeypot') { loadHoneypotStatus(); loadThreads(); }
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  scrollToPane(scrollEl || document.getElementById(targetId));
+}
+
+/** Eased window scroll driven by rAF, so it animates regardless of
+ *  browser smooth-scroll settings. Returns true if it started animating. */
+function smoothScrollTo(target) {
+  const dest = Math.max(0, Math.round(target));
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const root = document.documentElement;
+  const start = Math.round(window.pageYOffset);
+  const dist = dest - start;
+
+  if (reduce || Math.abs(dist) < 2) {
+    window.scrollTo(0, dest);
+    return false;
+  }
+
+  const duration = Math.min(900, Math.max(320, Math.abs(dist) * 0.42));
+  const t0 = performance.now();
+  const prevBehaviour = root.style.scrollBehavior;
+  root.style.scrollBehavior = 'auto'; // stop CSS smooth-scroll from doubling up
+
+  const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / duration);
+    window.scrollTo(0, start + dist * easeInOut(p));
+    if (p < 1) {
+      requestAnimationFrame(step);
+    } else {
+      window.scrollTo(0, dest);
+      root.style.scrollBehavior = prevBehaviour;
+    }
+  };
+  requestAnimationFrame(step);
+  return true;
+}
+
+/** Scrolls to a tab pane, clearing the sticky header. */
+function scrollToPane(pane) {
+  if (!pane) return false;
+  const header = document.querySelector('.site-header');
+  const offset = (header ? header.offsetHeight : 0) + 20;
+  const top = pane.getBoundingClientRect().top + window.scrollY - offset;
+  return smoothScrollTo(top);
 }
 
 function initGlobalHandlers() {
   document.querySelectorAll('[data-goto-tab]').forEach((el) => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
-      switchTab(el.dataset.gotoTab);
+      switchTab(el.dataset.gotoTab, document.getElementById(el.dataset.gotoTab));
     });
   });
 
@@ -199,24 +255,39 @@ function initChecker() {
   });
 
   ui['analyze-msg-btn'].addEventListener('click', () => {
-    const value = ui['scam-msg-input'].value.trim();
+    const value = ui['scam-msg-input'].value.trim()
+                  || ui['quick-search-input'].value.trim();
     if (!value) { toast(t('t1_empty_note'), 'info'); ui['scam-msg-input'].focus(); return; }
-    runLookup(value);
+    runDeepAnalyze(value);
   });
 
   ui['btn-clear-tab1'].addEventListener('click', () => {
     quick.value = '';
     ui['scam-msg-input'].value = '';
-    ui['dropzone-filename'].classList.add('is-hidden');
     ui['scam-img-input'].value = '';
+    if (ui['scam-audio-input']) ui['scam-audio-input'].value = '';
+    if (ui['qr-payload-input']) ui['qr-payload-input'].value = '';
+    if (ui['qr-row']) ui['qr-row'].classList.add('is-hidden');
+    if (ui['attach-qr-btn']) ui['attach-qr-btn'].classList.remove('is-active');
+    if (ui['attach-audio-btn']) ui['attach-audio-btn'].classList.remove('is-active');
+    ui['dropzone-box'].classList.remove('is-active');
+    if (ui['attach-status']) {
+      ui['attach-status'].textContent = '';
+      ui['attach-status'].classList.add('is-hidden');
+    }
+    state.lastVerdict = null;
+    state.lastReport = null;
     ui['result-placeholder'].classList.remove('is-hidden');
     ui['result-loading'].classList.add('is-hidden');
     ui['result-active-content'].classList.add('is-hidden');
     ui['bait-preview-modal'].classList.add('is-hidden');
+    if (ui['principles-panel']) ui['principles-panel'].classList.add('is-hidden');
+    if (ui['layers-panel']) ui['layers-panel'].classList.add('is-hidden');
+    if (ui['verdict-meta']) ui['verdict-meta'].classList.add('is-hidden');
     state.latestBait = null;
   });
 
-  // Dropzone — click, keyboard and drag/drop.
+  // Dropzone — click, keyboard and drag/drop (image → real OCR endpoint).
   const fileInput = ui['scam-img-input'];
   ui['dropzone-box'].addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => handleFile(fileInput.files && fileInput.files[0]));
@@ -237,22 +308,250 @@ function initChecker() {
     if (e.dataTransfer && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
   });
 
+  function setAttachStatus(text) {
+    const el = ui['attach-status'];
+    if (!el) return;
+    el.textContent = text || '';
+    el.classList.toggle('is-hidden', !text);
+  }
+
   function handleFile(file) {
     if (!file) return;
-    const label = ui['dropzone-filename'];
-    label.textContent = `Attached: ${file.name}`;
-    label.classList.remove('is-hidden');
-    if (!ui['scam-msg-input'].value.trim()) {
-      ui['scam-msg-input'].value =
-        '[From screenshot] Urgent: your power connection is due for disconnection today. Pay Rs 45 to bijli.board.pay@ybl or call 9876543210.';
+    if (!/^image\//.test(file.type)) {
+      toast(t('attach_wrong_type'), 'error');
+      return;
     }
+    setAttachStatus(`${t('attach_reading')} ${file.name}`);
+    uploadAndAnalyze('/api/checker/analyze-image', file, 'IMAGE_OCR')
+      .catch(() => setAttachStatus(''))
+      .finally(() => { ui['dropzone-box'].classList.remove('is-active'); });
+    ui['dropzone-box'].classList.add('is-active');
   }
+
+  // ── Voice note → /api/checker/analyze-audio ──────────────────────────────
+  const audioInput = ui['scam-audio-input'];
+  ui['attach-audio-btn'].addEventListener('click', () => audioInput.click());
+  audioInput.addEventListener('change', () => {
+    const file = audioInput.files && audioInput.files[0];
+    if (!file) return;
+    if (!/^audio\//.test(file.type) && !/\.(mp3|wav|m4a|ogg|aac|opus)$/i.test(file.name)) {
+      toast(t('attach_wrong_type'), 'error');
+      return;
+    }
+    ui['attach-audio-btn'].classList.add('is-active');
+    setAttachStatus(`${t('attach_reading')} ${file.name}`);
+    uploadAndAnalyze('/api/checker/analyze-audio', file, 'VOICE_AUDIO')
+      .catch(() => setAttachStatus(''))
+      .finally(() => ui['attach-audio-btn'].classList.remove('is-active'));
+  });
+
+  // ── UPI QR payload → /api/checker/analyze-qr ─────────────────────────────
+  ui['attach-qr-btn'].addEventListener('click', () => {
+    const row = ui['qr-row'];
+    const open = row.classList.toggle('is-hidden');
+    ui['attach-qr-btn'].classList.toggle('is-active', !open);
+    if (!open) ui['qr-payload-input'].focus();
+  });
+  const submitQr = () => {
+    const payload = (ui['qr-payload-input'].value || '').trim();
+    if (!payload) { toast(t('qr_empty'), 'info'); ui['qr-payload-input'].focus(); return; }
+    setAttachStatus(t('attach_reading'));
+    postJson('/api/checker/analyze-qr', { payload, lang: currentLanguage })
+      .then((data) => { showAnalyzeResult(data); setAttachStatus(''); })
+      .catch((err) => { setAttachStatus(''); toastFromError(err, 'toast_error_network'); });
+  };
+  ui['qr-analyze-btn'].addEventListener('click', submitQr);
+  ui['qr-payload-input'].addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitQr();
+  });
 
   ui['btn-generate-bait'].addEventListener('click', generateBait);
   ui['btn-copy-bait-text'].addEventListener('click', copyBaitReply);
-  ui['btn-send-to-honeypot'].addEventListener('click', () => switchTab('tab-honeypot'));
+
+  // ── Hand the finished case to Tab 2 (POST /api/honeypot/create-case) ─────
+  ui['btn-send-to-honeypot'].addEventListener('click', handOverToHoneypot);
 }
 
+/** Shared POST helper so every input mode resolves to the same response shape. */
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+/** Uploads a file to one of the multipart investigation endpoints. */
+async function uploadAndAnalyze(url, file, inputType) {
+  const analyzeBtn = ui['analyze-msg-btn'];
+  const analyzeLabel = ui['analyze-label'];
+  beginBusy();
+
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('lang', currentLanguage);
+    const res = await fetch(url, { method: 'POST', body: fd });
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json()).detail || ''; } catch (e) { /* ignore */ }
+      throw new Error(detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    showAnalyzeResult(data);
+    return data;
+  } catch (err) {
+    endBusy();
+    ui['result-loading'].classList.add('is-hidden');
+    ui['result-placeholder'].classList.remove('is-hidden');
+    toast(err && err.message && !/^HTTP /.test(err.message)
+      ? err.message : t('toast_error_network'), 'error');
+    throw err;
+  } finally {
+    ui['result-side-card'].setAttribute('aria-busy', 'false');
+    analyzeBtn.disabled = false;
+    analyzeLabel.setAttribute('data-i18n', 'btn_analyze');
+    analyzeLabel.textContent = t('btn_analyze');
+  }
+}
+
+function beginBusy() {
+  ui['result-placeholder'].classList.add('is-hidden');
+  ui['result-active-content'].classList.add('is-hidden');
+  ui['result-loading'].classList.remove('is-hidden');
+  ui['result-side-card'].setAttribute('aria-busy', 'true');
+  ui['analyze-msg-btn'].disabled = true;
+}
+
+function endBusy() {
+  ui['result-side-card'].setAttribute('aria-busy', 'false');
+  ui['analyze-msg-btn'].disabled = false;
+  ui['analyze-label'].setAttribute('data-i18n', 'btn_analyze');
+  ui['analyze-label'].textContent = t('btn_analyze');
+}
+
+/**
+ * Single funnel for every `/analyze*` response: hides loading, stores the
+ * verdict, then renders gauge → banner → principles → layers → identifiers.
+ */
+function showAnalyzeResult(data) {
+  ui['result-loading'].classList.add('is-hidden');
+  ui['result-active-content'].classList.remove('is-hidden');
+  state.lastReport = data;
+
+  const normalized = {
+    risk_score: data.final_score,
+    threat_level: data.threat_level,
+    category: data.primary_category,
+    reports_count: (data.blacklist_hits || []).length,
+    action_guidance: data.citizen_action,
+    extracted_entities: {
+      upis: (data.extracted_entities || {}).upis || [],
+      phones: (data.extracted_entities || {}).phones || [],
+      bank_accounts: (data.extracted_entities || {}).bank_accounts || [],
+      ifsc_codes: (data.extracted_entities || {}).ifsc_codes || [],
+    },
+    counter_bait_available: data.counter_bait_available,
+  };
+  state.lastVerdict = normalized;
+
+  renderVerdict(normalized);
+  renderMeta(data);
+  renderPrinciples(data);
+  renderLayers(data);
+  endBusy();
+}
+
+/** Provenance chips: which engine answered, on what, under which case id. */
+function renderMeta(data) {
+  const wrap = ui['verdict-meta'];
+  if (!wrap) return;
+  const model = data.ai_source === 'local_nli'
+    ? (data.model ? `${t('meta_local_ai')} · ${data.model}` : t('meta_local_ai'))
+    : (data.ai_source && data.ai_source !== 'local_engine'
+      ? `Gemini · ${data.ai_source}`
+      : t('meta_local'));
+  const parts = [
+    [ui['meta-model'], model],
+    [ui['meta-input'], data.input_type || 'TEXT'],
+    [ui['meta-case'], data.case_id || data.investigation_id || '—'],
+  ];
+  parts.forEach(([el, value]) => {
+    if (el) el.querySelector('.verdict-meta__val').textContent = value;
+  });
+  wrap.classList.remove('is-hidden');
+}
+
+/** 4-Principle Cognitive AI Detective breakdown (spec §4). */
+function renderPrinciples(data) {
+  const panel = ui['principles-panel'];
+  const list = ui['principles-list'];
+  if (!panel || !list) return;
+
+  const rows = (data.principles || []).filter((p) => p && p.name);
+  if (!rows.length) { panel.classList.add('is-hidden'); return; }
+
+  list.innerHTML = rows.map((p, i) => {
+    const score = Number(p.score) || 0;
+    const total = rows.reduce((s, r) => s + (Number(r.score) || 0), 0) || 100;
+    const pct = Math.max(0, Math.min(100, Math.round((score / total) * 100)));
+    const findings = (p.findings || []).filter(Boolean);
+    const weight = i === 0 ? 'high' : (i < 3 ? 'mid' : 'low');
+    const items = findings.length
+      ? findings.map((f) => `<li>${escapeHtml(f)}</li>`).join('')
+      : `<li>${escapeHtml(t('principle_no_signal'))}</li>`;
+    return `
+    <div class="principle-item" data-weight="${weight}">
+      <div class="principle-head">
+        <span class="principle-name">${escapeHtml(p.name)}</span>
+        <span class="principle-pts">${pct}%</span>
+      </div>
+      <div class="principle-bar-wrap">
+        <span class="principle-bar" style="width:0%" data-w="${pct}"></span>
+      </div>
+      <ul class="principle-findings${findings.length ? '' : ' is-empty'}">${items}</ul>
+    </div>`;
+  }).join('');
+
+  panel.classList.remove('is-hidden');
+
+  // Animate the bars in on the next frame so the width transition plays.
+  requestAnimationFrame(() => {
+    list.querySelectorAll('.principle-bar').forEach((bar) => {
+      bar.style.width = `${bar.dataset.w}%`;
+    });
+  });
+}
+
+/** Hands the current investigation to Tab 2 so the decoy can pick it up. */
+async function handOverToHoneypot() {
+  const entities = (state.lastVerdict && state.lastVerdict.extracted_entities) || {};
+  const btn = ui['btn-send-to-honeypot'];
+  btn.disabled = true;
+  try {
+    const payload = {
+      scammer_phone: (entities.phones || [])[0] || null,
+      scammer_upi: (entities.upis || [])[0] || null,
+      scam_category: (state.lastReport && (state.lastReport.scam_category
+        || state.lastReport.primary_category))
+        || (state.lastVerdict && state.lastVerdict.category)
+        || 'General Suspicious',
+      context: (ui['scam-msg-input'].value || '').trim().slice(0, 500) || null,
+    };
+    const res = await postJson('/api/honeypot/create-case', payload);
+    state.activeCaseId = (res && res.case_id) || state.activeCaseId;
+    toast(t('handover_done'), 'success');
+    switchTab('tab-honeypot');
+  } catch (err) {
+    toastFromError(err, 'toast_error_network');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/** Quick registry lookup — used by the top search bar only */
 async function runLookup(queryText) {
   const analyzeBtn = ui['analyze-msg-btn'];
   const analyzeLabel = ui['analyze-label'];
@@ -261,10 +560,7 @@ async function runLookup(queryText) {
   ui['result-active-content'].classList.add('is-hidden');
   ui['result-loading'].classList.remove('is-hidden');
   ui['result-side-card'].setAttribute('aria-busy', 'true');
-
   analyzeBtn.disabled = true;
-  analyzeLabel.removeAttribute('data-i18n');
-  analyzeLabel.textContent = t('btn_analyzing');
 
   try {
     const res = await fetch('/api/checker/lookup', {
@@ -274,11 +570,16 @@ async function runLookup(queryText) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
     ui['result-loading'].classList.add('is-hidden');
     ui['result-active-content'].classList.remove('is-hidden');
     state.lastVerdict = data;
+    state.lastReport = null;
     renderVerdict(data);
+    renderMeta({ input_type: 'IDENTIFIER_LOOKUP', ai_source: 'local_engine',
+                 case_id: t('meta_quick') });
+    // Quick lookup is a single registry hit — no layer/principle sweep to show.
+    ui['principles-panel'].classList.add('is-hidden');
+    ui['layers-panel'].classList.add('is-hidden');
   } catch (err) {
     ui['result-loading'].classList.add('is-hidden');
     ui['result-placeholder'].classList.remove('is-hidden');
@@ -288,6 +589,28 @@ async function runLookup(queryText) {
     analyzeBtn.disabled = false;
     analyzeLabel.setAttribute('data-i18n', 'btn_analyze');
     analyzeLabel.textContent = t('btn_analyze');
+  }
+}
+
+/** Full investigation — de-obfuscation → 5 OSINT layers → 4-principle detective */
+async function runDeepAnalyze(queryText) {
+  const analyzeLabel = ui['analyze-label'];
+
+  beginBusy();
+  analyzeLabel.removeAttribute('data-i18n');
+  analyzeLabel.textContent = t('btn_analyze_busy');
+
+  try {
+    const data = await postJson('/api/checker/analyze', {
+      query: queryText, lang: currentLanguage, input_type: 'TEXT',
+    });
+    showAnalyzeResult(data);
+  } catch (err) {
+    ui['result-loading'].classList.add('is-hidden');
+    ui['result-placeholder'].classList.remove('is-hidden');
+    toastFromError(err, 'toast_error_network');
+  } finally {
+    endBusy();
   }
 }
 
@@ -345,6 +668,53 @@ function setText(id, value, fallback) {
   if (!el) return;
   el.textContent = value && value.trim() ? value : fallback;
   el.classList.toggle('badge-mono-red', id === 'ext-upi-val' && Boolean(value));
+}
+
+/** Renders the 5-layer breakdown panel */
+function renderLayers(data) {
+  const panel = document.getElementById('layers-panel');
+  const list = document.getElementById('layers-list');
+  const dlBtn = document.getElementById('btn-dl-forensic-log');
+  if (!panel || !list) return;
+
+  const layers = data.layers || [];
+  if (!layers.length) { panel.classList.add('is-hidden'); return; }
+
+  const LAYER_ICONS = ['#i-search', '#i-database', '#i-activity', '#i-sparkles', '#i-lock'];
+  const scoreColor = (s) => s >= 70 ? '#ef4444' : s >= 40 ? '#f59e0b' : '#10b981';
+
+  list.innerHTML = layers.map((layer, idx) => {
+    const score = layer.score || 0;
+    const color = scoreColor(score);
+    const flagsHtml = (layer.flags || []).map(f =>
+      `<li class="layer-flag">${f.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`
+    ).join('');
+    return `
+    <details class="layer-item" data-score="${score}">
+      <summary class="layer-summary">
+        <span class="layer-icon" style="color:${color}">
+          <svg aria-hidden="true"><use href="${LAYER_ICONS[idx] || '#i-checks'}"></use></svg>
+        </span>
+        <span class="layer-info">
+          <span class="layer-name">${layer.name}</span>
+          <span class="layer-score" style="color:${color}">${score}/100</span>
+        </span>
+        <span class="layer-bar-wrap">
+          <span class="layer-bar" style="width:${score}%;background:${color}"></span>
+        </span>
+      </summary>
+      <ul class="layer-flags-list">${flagsHtml || '<li class="layer-flag muted">No flags raised</li>'}</ul>
+    </details>`;
+  }).join('');
+
+  panel.classList.remove('is-hidden');
+
+  // Forensic log download button
+  if (dlBtn && data.forensic_log_url) {
+    dlBtn.href = data.forensic_log_url;
+    dlBtn.download = `ScamTrap_${data.case_id}_forensic.log`;
+    dlBtn.classList.remove('is-hidden');
+  }
 }
 
 async function generateBait() {
@@ -718,7 +1088,9 @@ function renderProgress(messages, identifiers) {
     [hasBank, 'prog_4']
   ];
 
-  ui['trap-progress-list'].innerHTML = steps.map(([done, key]) => `
+  const box = ui['trap-progress-list'];
+  if (!box) return;
+  box.innerHTML = steps.map(([done, key]) => `
     <li class="${done ? 'is-done' : 'is-todo'}">
       <svg aria-hidden="true"><use href="${done ? '#i-check' : '#i-minus'}"></use></svg>
       <span>${escapeHtml(t(key))}</span>
@@ -853,6 +1225,11 @@ document.addEventListener('i18n:changed', () => {
   if (state.summary) renderSummary();
   if (state.threads.length) renderThreads();
   if (state.lastVerdict) renderVerdict(state.lastVerdict);
+  if (state.lastReport) {
+    renderMeta(state.lastReport);
+    renderPrinciples(state.lastReport);
+    renderLayers(state.lastReport);
+  }
 
   if (ui['analyze-label']) {
     ui['analyze-label'].setAttribute('data-i18n', 'btn_analyze');

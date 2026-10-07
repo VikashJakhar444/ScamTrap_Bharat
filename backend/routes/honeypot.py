@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from backend.services.llm_engine import generate_decoy_reply
+from backend.services.decoy_persona import generate_decoy_reply
 from backend.database.db import get_db_connection
 
 router = APIRouter(prefix="/api/honeypot", tags=["Honeypot Chat"])
@@ -159,3 +159,60 @@ def get_outbox():
     messages_to_send = list(outbox_queue)
     outbox_queue.clear()
     return {"outbox": messages_to_send}
+
+
+class CreateCasePayload(BaseModel):
+    scammer_phone: Optional[str] = None
+    scammer_upi: Optional[str] = None
+    scam_category: str = "General Suspicious"
+    context: Optional[str] = None
+    victim_name: Optional[str] = None
+    lang: str = "en"
+
+
+@router.post("/create-case")
+def create_case(payload: CreateCasePayload):
+    """spec §7 — hands a Tab 1 investigation over to Tab 2 (the Honeypot).
+
+    Creates a `cases` row plus a seed `scammer` message carrying the original
+    context, so the co-pilot chat has the real thread to work with.
+    """
+    import uuid
+
+    case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
+    phone = (payload.scammer_phone or "").strip() or "UNSPECIFIED"
+    category = (payload.scam_category or "General Suspicious").strip()
+
+    with get_db_connection() as conn:
+        conn.execute(
+            """INSERT INTO cases (case_id, scammer_phone, scam_category, status)
+               VALUES (?, ?, ?, 'STANDBY')""",
+            (case_id, phone, category),
+        )
+        seed_text = (payload.context or "").strip()
+        if seed_text:
+            conn.execute(
+                """INSERT INTO messages (case_id, sender_role, message_text)
+                   VALUES (?, 'scammer', ?)""",
+                (case_id, seed_text),
+            )
+        if payload.scammer_upi:
+            conn.execute(
+                """INSERT INTO scam_identifiers
+                       (identifier_value, identifier_type, scam_category, risk_score, reports_count)
+                   VALUES (?, 'UPI', ?, 80, 1)
+                   ON CONFLICT(identifier_value) DO UPDATE SET
+                       reports_count = reports_count + 1,
+                       last_seen = CURRENT_TIMESTAMP""",
+                (payload.scammer_upi.strip(), category),
+            )
+        conn.commit()
+
+    return {
+        "status": "success",
+        "case_id": case_id,
+        "scammer_phone": phone,
+        "scammer_upi": payload.scammer_upi,
+        "scam_category": category,
+        "message": "Case opened in the Honeypot tab.",
+    }

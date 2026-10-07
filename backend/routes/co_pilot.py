@@ -25,6 +25,7 @@ def get_fake_receipt(
     return FileResponse(result["filepath"], media_type="image/png", filename=result["filename"])
 
 @router.post("/generate-receipt-bait")
+@router.post("/generate-bait")          # spec §7 alias — same handler
 def create_receipt_bait(req: GenerateBaitRequest):
     """Generates a realistic UPI Daily Limit Reached screenshot and ready-to-copy Hinglish text."""
     result = generate_upi_limit_receipt(scammer_upi=req.scammer_upi or "bijli.board.pay@ybl", amount=req.amount or "25,000")
