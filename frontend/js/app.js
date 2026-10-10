@@ -221,53 +221,57 @@ function switchTab(targetId, scrollEl) {
   }
 
   if (scrollEl) {
-    scrollToPane(scrollEl);
+    requestAnimationFrame(() => {
+      scrollToPane(scrollEl);
+    });
   } else {
     // When switching tabs via navbar, start at top so user sees the hero section
-    smoothScrollTo(0);
+    requestAnimationFrame(() => {
+      smoothScrollTo(0);
+    });
   }
 }
 
-/** Eased window scroll driven by rAF, so it animates regardless of
- *  browser smooth-scroll settings. Returns true if it started animating. */
+/** Smooth window scroll that reliably glides across all browsers */
 function smoothScrollTo(target) {
   const dest = Math.max(0, Math.round(target));
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const root = document.documentElement;
-  const start = Math.round(window.pageYOffset);
+  const start = Math.round(window.pageYOffset || window.scrollY || 0);
   const dist = dest - start;
 
-  if (reduce || Math.abs(dist) < 2) {
-    window.scrollTo(0, dest);
-    return false;
+  if (Math.abs(dist) < 2) return false;
+
+  // Use native smooth scrolling (handled by browser compositor)
+  try {
+    window.scrollTo({
+      top: dest,
+      behavior: 'smooth'
+    });
+    return true;
+  } catch (e) {
+    // Fallback rAF animation
+    const duration = Math.min(800, Math.max(350, Math.abs(dist) * 0.45));
+    const t0 = performance.now();
+    const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / duration);
+      window.scrollTo(0, start + dist * easeInOut(p));
+      if (p < 1) {
+        requestAnimationFrame(step);
+      } else {
+        window.scrollTo(0, dest);
+      }
+    };
+    requestAnimationFrame(step);
+    return true;
   }
-
-  const duration = Math.min(900, Math.max(320, Math.abs(dist) * 0.42));
-  const t0 = performance.now();
-  const prevBehaviour = root.style.scrollBehavior;
-  root.style.scrollBehavior = 'auto'; // stop CSS smooth-scroll from doubling up
-
-  const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
-
-  const step = (now) => {
-    const p = Math.min(1, (now - t0) / duration);
-    window.scrollTo(0, start + dist * easeInOut(p));
-    if (p < 1) {
-      requestAnimationFrame(step);
-    } else {
-      window.scrollTo(0, dest);
-      root.style.scrollBehavior = prevBehaviour;
-    }
-  };
-  requestAnimationFrame(step);
-  return true;
 }
 
 /** Scrolls to a tab pane, clearing the sticky header. */
 function scrollToPane(pane) {
   if (!pane) return false;
   const header = document.querySelector('.site-header');
-  const offset = (header ? header.offsetHeight : 0) + 20;
+  const offset = (header ? header.offsetHeight : 0) + 16;
   const top = pane.getBoundingClientRect().top + window.scrollY - offset;
   return smoothScrollTo(top);
 }
