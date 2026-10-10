@@ -67,6 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) { /* private mode */ }
   if (ui['hero-main']) ui['hero-main'].hidden = restoredTab !== 'tab-checker';
+  if (ui['hero-honeypot']) ui['hero-honeypot'].hidden = restoredTab !== 'tab-honeypot';
+  if (restoredTab === 'tab-honeypot') {
+    renderTargetBar();
+    syncCoPilotPanel();
+    seedThread();
+    syncCaseGate();
+  }
+  if (restoredTab === 'tab-trends') loadSummary();
+  if (restoredTab === 'tab-proof') loadEvidence();
   const boot = document.getElementById('tab-boot');
   if (boot) boot.textContent = '';
 });
