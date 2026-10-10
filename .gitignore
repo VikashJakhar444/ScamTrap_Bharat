@@ -28,3 +28,11 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Per-run investigation logs (generated at runtime)
+storage/investigation_logs/
+storage/logs/
+
+# WhatsApp bridge auth & cache
+.wwebjs_auth/
+whatsapp-bridge/.wwebjs_auth/

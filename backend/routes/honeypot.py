@@ -1,47 +1,102 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+import hashlib
 import json
+import os
+import re
 import urllib.parse
 import uuid
 
-from backend.services.decoy_persona import generate_decoy_reply
-from backend.services.reply_ai import build_cloud_system, generate_reply
-from backend.database.db import get_db_connection
+from backend.services.reply_ai import build_cloud_system, build_demo_scammer_system, build_demo_decoy_system, generate_reply
+from backend.services.extractor import extract_entities
+from backend.database.db import get_db_connection, normalize_digits
 
 router = APIRouter(prefix="/api/honeypot", tags=["Honeypot Chat"])
 
-# In-memory session tracking for WhatsApp Bridge and simulated threads
-wa_bridge_state = {
+# --------------------------------------------------------------------------- #
+# Bridge state (fed by the Node bridge, never hard-coded)
+# --------------------------------------------------------------------------- #
+_bridge_state: Dict[str, Any] = {
     "connected": False,
-    "qr_code": None,
-    "phone_number": "+91 91234 56780",
-    "persona": "Vikas Ji (52y Retired Citizen)",
-    "trap_active_numbers": {"+91 98765 43210": True}
+    "qr_data": None,
+    "qr_png": None,
+    "phone_number": None,
+    "last_seen": 0.0,
 }
 
-outbox_queue: List[Dict[str, Any]] = []
+BRIDGE_PORT = int(os.getenv("BRIDGE_PORT", "3000"))
+BRIDGE_TOKEN = os.getenv("BRIDGE_TOKEN", "")
+if not BRIDGE_TOKEN:
+    BRIDGE_TOKEN = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
 
-class MessagePayload(BaseModel):
-    case_id: str = "CASE-2026-1001"
-    message_text: str
-    sender_role: str = "scammer"
-    sender_phone: Optional[str] = "+91 98765 43210"
+# reply engine provider timeouts are handled inside reply_ai; nothing else here.
 
+
+def _app_get(key: str, default: str = "") -> str:
+    with get_db_connection() as conn:
+        row = conn.execute("SELECT value FROM app_state WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else default
+
+
+def _app_set(key: str, value: str) -> None:
+    with get_db_connection() as conn:
+        conn.execute(
+            "INSERT INTO app_state (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )
+        conn.commit()
+
+
+def get_active_mode() -> str:
+    """'mode1' (co-pilot, human driven) or 'mode2' (cloud node, auto capable)."""
+    return _app_get("active_mode", "mode1") or "mode1"
+
+
+def _is_loopback(request: Request) -> bool:
+    host = (request.client.host if request.client else "") or ""
+    return host in ("127.0.0.1", "::1", "localhost")
+
+
+def _norm_phone(value: str) -> str:
+    """Last-10-digit key so '+91 98765 00011', '919876543210@c.us' and
+    '9876543210' all resolve to one session."""
+    return normalize_digits(value or "", last=10)
+
+
+def _session_by_phone(phone_norm: str) -> Optional[Dict[str, Any]]:
+    if not phone_norm or len(phone_norm) < 10:
+        return None
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM cloud_sessions WHERE phone_norm = ? ORDER BY created_at DESC LIMIT 1",
+            (phone_norm,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+# --------------------------------------------------------------------------- #
+# Legacy payloads (kept so old imports never break; endpoints removed below)
+# --------------------------------------------------------------------------- #
 class TrapTogglePayload(BaseModel):
     phone_number: str
     is_active: bool
 
+
 class WaStatusPayload(BaseModel):
     connected: bool
     qr_code: Optional[str] = None
+    qr_data: Optional[str] = None
     phone_number: Optional[str] = None
 
+
+# --------------------------------------------------------------------------- #
+# Status / health
+# --------------------------------------------------------------------------- #
 @router.get("/status")
 @router.get("/wa-status")
 def get_honeypot_status():
-    """Returns 2-phone honeypot connection and node health. Totals are counted
-    from the live database rather than hard-coded."""
     with get_db_connection() as conn:
         engaged = conn.execute(
             "SELECT COUNT(DISTINCT case_id) FROM messages WHERE sender_role = 'scammer'"
@@ -50,44 +105,102 @@ def get_honeypot_status():
             "SELECT COUNT(*) FROM scam_identifiers WHERE identifier_type = 'BANK_AC'"
         ).fetchone()[0]
         trap_count = conn.execute("SELECT COUNT(*) FROM cases").fetchone()[0]
+        cloud_active = conn.execute(
+            "SELECT COUNT(*) FROM cloud_sessions WHERE status = 'ACTIVE'"
+        ).fetchone()[0]
 
     return {
-        "node_status": "CONNECTED" if wa_bridge_state["connected"] else "ONLINE_STANDBY",
-        "qr_ready": True,
-        "whatsapp_connected": wa_bridge_state["connected"],
-        "virtual_phone_number": wa_bridge_state["phone_number"],
-        "active_persona": wa_bridge_state["persona"],
-        "mode": "100% Isolated Local Sandbox",
-        "trap_active_numbers": wa_bridge_state["trap_active_numbers"],
+        "node_status": "CONNECTED" if _bridge_state["connected"] else "BRIDGE_OFFLINE",
+        "whatsapp_connected": _bridge_state["connected"],
+        "virtual_phone_number": _bridge_state.get("phone_number"),
+        "active_mode": get_active_mode(),
+        "cloud_sessions_active": cloud_active,
         "scammers_engaged_total": engaged,
         "mules_extracted_total": mules,
         "active_traps_count": trap_count,
+        "mode": "100% Isolated Local Sandbox",
     }
+
 
 @router.post("/wa-status")
 def update_wa_status(payload: WaStatusPayload):
-    """Updates WhatsApp Bridge status from Node.js."""
-    wa_bridge_state["connected"] = payload.connected
+    """The Node bridge pushes its live status here (QR + connected + number)."""
+    import time
+    _bridge_state["connected"] = bool(payload.connected)
+    _bridge_state["last_seen"] = time.time()
+    if payload.qr_data:
+        _bridge_state["qr_data"] = payload.qr_data
     if payload.qr_code:
-        wa_bridge_state["qr_code"] = payload.qr_code
+        _bridge_state["qr_png"] = payload.qr_code
     if payload.phone_number:
-        wa_bridge_state["phone_number"] = payload.phone_number
-    return {"status": "updated"}
+        _bridge_state["phone_number"] = payload.phone_number
+        with get_db_connection() as conn:
+            conn.execute(
+                "UPDATE cloud_sessions SET status = 'ACTIVE' WHERE phone_norm = ?",
+                (_norm_phone(payload.phone_number),),
+            )
+            conn.commit()
+    if payload.connected:
+        _bridge_state["qr_data"] = None
+        _bridge_state["qr_png"] = None
+    return {"status": "updated", "active_mode": get_active_mode()}
+
+
+@router.get("/bridge-status")
+def bridge_status():
+    """Frontend polls this to know if the Node bridge is alive + connected."""
+    return {
+        "connected": _bridge_state["connected"],
+        "has_qr": bool(_bridge_state.get("qr_data") or _bridge_state.get("qr_png")),
+        "phone_number": _bridge_state.get("phone_number"),
+        "active_mode": get_active_mode(),
+        "bridge_port": BRIDGE_PORT,
+    }
+
+
+@router.get("/bridge-qr")
+def bridge_qr():
+    """Returns the pending QR payload (data-URL) so the UI can render it."""
+    return {
+        "qr_data": _bridge_state.get("qr_data"),
+        "qr_png": _bridge_state.get("qr_png"),
+        "connected": _bridge_state["connected"],
+    }
+
+
+class ModePayload(BaseModel):
+    mode: str
+
+
+@router.get("/mode")
+def get_mode():
+    return {"active_mode": get_active_mode()}
+
+
+@router.post("/set-mode")
+def set_mode(payload: ModePayload):
+    """Exactly one mode acts at a time. mode1 = co-pilot (human driven),
+    mode2 = cloud node (auto-capable)."""
+    mode = (payload.mode or "").strip().lower()
+    if mode not in ("mode1", "mode2"):
+        raise HTTPException(status_code=422, detail="mode must be 'mode1' or 'mode2'")
+    _app_set("active_mode", mode)
+    return {"status": "success", "active_mode": mode}
+
 
 @router.post("/toggle-trap")
 def toggle_trap_for_number(payload: TrapTogglePayload):
-    """Toggles active AI decoy trap for a specific scammer phone number."""
-    wa_bridge_state["trap_active_numbers"][payload.phone_number] = payload.is_active
-    return {
-        "status": "success",
-        "phone_number": payload.phone_number,
-        "is_active": payload.is_active
-    }
+    with get_db_connection() as conn:
+        conn.execute(
+            "UPDATE cases SET status = ? WHERE scammer_phone = ?",
+            ("TRAP_ACTIVE" if payload.is_active else "STANDBY", payload.phone_number),
+        )
+        conn.commit()
+    return {"status": "success", "phone_number": payload.phone_number, "is_active": payload.is_active}
+
 
 @router.get("/threads")
 def get_scammer_threads():
-    """Returns active threads for Tab 2 UI, built from stored cases and their
-    most recent message."""
     with get_db_connection() as conn:
         cases = conn.execute(
             "SELECT case_id, scammer_phone, scam_category, status FROM cases ORDER BY created_at DESC"
@@ -102,70 +215,73 @@ def get_scammer_threads():
                 "case_id": case["case_id"],
                 "phone": case["scammer_phone"],
                 "category": case["scam_category"],
-                "is_trap_active": wa_bridge_state["trap_active_numbers"].get(
-                    case["scammer_phone"], case["status"] != "STANDBY"
-                ),
+                "is_trap_active": case["status"] == "TRAP_ACTIVE",
                 "last_message": last["message_text"] if last else "No messages yet",
                 "time": last["timestamp"] if last else case["status"],
             })
     return threads
 
-@router.post("/send-message")
-@router.post("/incoming")
-def process_scammer_message(payload: MessagePayload):
-    """Processes an incoming message from the scammer and computes the AI decoy response."""
-    with get_db_connection() as conn:
-        # Save scammer message
-        conn.execute(
-            "INSERT INTO messages (case_id, sender_role, message_text) VALUES (?, ?, ?)",
-            (payload.case_id, payload.sender_role, payload.message_text)
-        )
-        conn.commit()
-        
-        # Retrieve recent conversation
-        rows = conn.execute(
-            "SELECT sender_role, message_text FROM messages WHERE case_id = ? ORDER BY id ASC",
-            (payload.case_id,)
-        ).fetchall()
-        
-        chat_history = [{"role": r["sender_role"], "text": r["message_text"]} for r in rows]
-        
-        # Generate decoy response
-        decoy_reply = generate_decoy_reply(chat_history)
-        
-        # Save decoy response
-        conn.execute(
-            "INSERT INTO messages (case_id, sender_role, message_text) VALUES (?, 'ai_decoy', ?)",
-            (payload.case_id, decoy_reply)
-        )
-        conn.commit()
-        
-        # Fetch updated messages
-        updated_rows = conn.execute(
-            "SELECT id, sender_role, message_text, timestamp FROM messages WHERE case_id = ? ORDER BY id ASC",
-            (payload.case_id,)
-        ).fetchall()
 
-    # Add to outbox for WA Bridge if needed
-    outbox_queue.append({
-        "to_phone": payload.sender_phone or "+91 98765 43210",
-        "text": decoy_reply
-    })
-
-    return {
-        "status": "success",
-        "decoy_response": decoy_reply,
-        "chat_history": [dict(r) for r in updated_rows]
-    }
-
+# --------------------------------------------------------------------------- #
+# Outbox: replies the bridge still has to deliver (survives restarts)
+# --------------------------------------------------------------------------- #
 @router.get("/outbox")
-def get_outbox():
-    """Returns messages pending to be sent by the WhatsApp bridge."""
-    messages_to_send = list(outbox_queue)
-    outbox_queue.clear()
-    return {"outbox": messages_to_send}
+def get_outbox(pending: int = 0):
+    """Messages the WhatsApp bridge must still deliver.
+
+    `?pending=1` marks rows as 'claimed' so a reconnecting bridge does not
+    double-send, while the normal call (no arg) stays backward compatible."""
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            "SELECT id, case_id, message_text, send_state FROM cloud_messages "
+            "WHERE send_state = 0 ORDER BY id ASC"
+        ).fetchall()
+        outbox = []
+        for r in rows:
+            session = conn.execute(
+                "SELECT scammer_phone FROM cloud_sessions WHERE case_id = ?",
+                (r["case_id"],),
+            ).fetchone()
+            phone = session["scammer_phone"] if session else None
+            if not phone or phone == "UNKNOWN":
+                continue
+            outbox.append({
+                "id": r["id"],
+                "case_id": r["case_id"],
+                "to_phone": phone,
+                "text": r["message_text"],
+            })
+        if pending and outbox:
+            ids = [o["id"] for o in outbox]
+            conn.execute(
+                "UPDATE cloud_messages SET send_state = 1 WHERE id IN (%s)" % ",".join("?" * len(ids)),
+                ids,
+            )
+            conn.commit()
+    return {"outbox": outbox}
 
 
+class SentPayload(BaseModel):
+    ids: List[int]
+
+
+@router.post("/sents")
+def mark_sent(payload: SentPayload):
+    """Bridge confirms delivery so we stop retrying."""
+    if not payload.ids:
+        return {"status": "noop"}
+    with get_db_connection() as conn:
+        conn.execute(
+            "UPDATE cloud_messages SET send_state = 1 WHERE id IN (%s)" % ",".join("?" * len(payload.ids)),
+            payload.ids,
+        )
+        conn.commit()
+    return {"status": "ok", "marked": len(payload.ids)}
+
+
+# --------------------------------------------------------------------------- #
+# Case creation (Tab 1 -> Tab 2 handover)
+# --------------------------------------------------------------------------- #
 class CreateCasePayload(BaseModel):
     scammer_phone: Optional[str] = None
     scammer_upi: Optional[str] = None
@@ -177,13 +293,6 @@ class CreateCasePayload(BaseModel):
 
 @router.post("/create-case")
 def create_case(payload: CreateCasePayload):
-    """spec §7 — hands a Tab 1 investigation over to Tab 2 (the Honeypot).
-
-    Creates a `cases` row plus a seed `scammer` message carrying the original
-    context, so the co-pilot chat has the real thread to work with.
-    """
-    import uuid
-
     case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
     phone = (payload.scammer_phone or "").strip() or "UNSPECIFIED"
     category = (payload.scam_category or "General Suspicious").strip()
@@ -224,17 +333,183 @@ def create_case(payload: CreateCasePayload):
 
 
 # --------------------------------------------------------------------------- #
-# Tab 2 · Cloud AI Node (autonomous takeover)
+# Detail mining (reuses the Tab 1 extractor, nothing new invented)
 # --------------------------------------------------------------------------- #
+_DETAIL_TYPE_MAP = {
+    "upis": "UPI",
+    "phones": "PHONE",
+    "bank_accounts": "BANK_AC",
+    "ifsc_codes": "IFSC",
+}
+
+
+def mine_details(case_id: str, text: str) -> List[Dict[str, str]]:
+    """Pulls every fraud-relevant entity out of `text` and stores the ones we
+    have not already seen for this case. Returns the newly stored rows."""
+    if not text or not text.strip():
+        return []
+    try:
+        entities = extract_entities(text) or {}
+    except Exception:
+        return []
+
+    stored: List[Dict[str, str]] = []
+    with get_db_connection() as conn:
+        seen = {
+            (r["detail_type"], r["detail_value"])
+            for r in conn.execute(
+                "SELECT detail_type, detail_value FROM extracted_details WHERE case_id = ?",
+                (case_id,),
+            ).fetchall()
+        }
+        for key, dtype in _DETAIL_TYPE_MAP.items():
+            for value in entities.get(key) or []:
+                value = (value or "").strip()
+                if not value:
+                    continue
+                normalized = _norm_phone(value) if dtype == "PHONE" else value
+                if (dtype, normalized) in seen:
+                    continue
+                seen.add((dtype, normalized))
+                conn.execute(
+                    "INSERT INTO extracted_details (case_id, detail_type, detail_value, source_message) "
+                    "VALUES (?, ?, ?, ?)",
+                    (case_id, dtype, normalized, text[:400]),
+                )
+                stored.append({"type": dtype, "value": normalized})
+        conn.commit()
+    return stored
+
+
+@router.get("/extracted")
+def get_extracted(case_id: str):
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            "SELECT id, detail_type, detail_value, source_message, created_at "
+            "FROM extracted_details WHERE case_id = ? ORDER BY id ASC",
+            (case_id,),
+        ).fetchall()
+    return {"case_id": case_id, "details": [dict(r) for r in rows]}
+
+
+# --------------------------------------------------------------------------- #
+# Inbound WhatsApp webhook (bridge -> backend)
+# --------------------------------------------------------------------------- #
+class WebhookPayload(BaseModel):
+    from_user: str = Field(..., alias="from")
+    text: str
+    wamid: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+
+
+@router.post("/webhook")
+def inbound_webhook(payload: WebhookPayload, request: Request):
+    """One scammer message in, at most one in-character reply out.
+
+    Exactly-once is enforced by a UNIQUE dedup_key + an atomic claim, so the
+    webhook and the manual UI box can never both answer the same message."""
+    if not _is_loopback(request):
+        raise HTTPException(status_code=403, detail="bridge webhook is loopback only")
+    token = (request.headers.get("x-bridge-token") or "").strip()
+    if BRIDGE_TOKEN and token != BRIDGE_TOKEN:
+        raise HTTPException(status_code=403, detail="bad bridge token")
+
+    text = (payload.text or "").strip()
+    if not text:
+        return {"status": "ignored", "reason": "empty"}
+
+    phone_norm = _norm_phone(payload.from_user)
+    dedup = payload.wamid or hashlib.sha1(f"{phone_norm}|{text}".encode("utf-8")).hexdigest()
+    dedup_key = f"{phone_norm}:{dedup}"
+
+    session = _session_by_phone(phone_norm)
+    if session is None:
+        return {"status": "ignored", "reason": "no_session", "phone_norm": phone_norm}
+
+    with get_db_connection() as conn:
+        try:
+            conn.execute(
+                "INSERT INTO inbound_queue (dedup_key, phone_norm, text, case_id) VALUES (?, ?, ?, ?)",
+                (dedup_key, phone_norm, text, session["case_id"]),
+            )
+            claimed = conn.execute(
+                "UPDATE inbound_queue SET claimed_by = 'webhook' "
+                "WHERE dedup_key = ? AND claimed_by IS NULL",
+                (dedup_key,),
+            ).rowcount
+            conn.commit()
+        except Exception:
+            claimed = 0
+            conn.rollback()
+    if claimed != 1:
+        return {"status": "duplicate", "reason": "already claimed"}
+
+    if get_active_mode() != "mode2":
+        return {"status": "queued", "reason": "mode1_active", "case_id": session["case_id"]}
+
+    case_id = session["case_id"]
+    with get_db_connection() as conn:
+        conn.execute(
+            "INSERT INTO cloud_messages (case_id, sender_role, message_text) VALUES (?, 'scammer', ?)",
+            (case_id, text),
+        )
+        conn.commit()
+    mine_details(case_id, text)
+
+    persona = _persona_of(session)
+    history = _cloud_history(case_id)
+    system = build_cloud_system(
+        session.get("relation") or persona.get("relation") or "family member",
+        persona.get("fake_name") or session.get("fake_name") or "",
+        session.get("excuse") or persona.get("excuse") or "",
+        session.get("scam_category") or persona.get("scam_category") or "General Suspicious",
+        persona.get("case_context") or {},
+        persona_mode=persona.get("persona_mode", "self"),
+    )
+    result = generate_reply(system, chat_history=history)
+
+    with get_db_connection() as conn:
+        conn.execute(
+            "INSERT INTO cloud_messages (case_id, sender_role, message_text, send_image, send_state) "
+            "VALUES (?, 'ai', ?, ?, 0)",
+            (case_id, result["reply"], 1 if result["send_image"] else 0),
+        )
+        conn.commit()
+    mine_details(case_id, result["reply"])
+
+    return {
+        "status": "Reply Delivered",
+        "case_id": case_id,
+        "ai_reply": result["reply"],
+        "provider": result["provider"],
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Cloud session (Mode 2)
+# --------------------------------------------------------------------------- #
+class ImportPayload(BaseModel):
+    case_context: Optional[Dict[str, Any]] = None
+    copilot_turns: Optional[List[Dict[str, str]]] = None
+    original_message: Optional[str] = None
+    target_phone: Optional[str] = None
+    bait_amount: Optional[str] = None
+
+
 class InitCloudPayload(BaseModel):
     scammer_phone: str = ""
-    relation: str = "family member"
+    relation: str = ""
     fake_name: Optional[str] = ""
     excuse: str = ""
     scam_category: Optional[str] = "General Suspicious"
     scammer_upi: Optional[str] = None
     context: Optional[str] = None
     case_context: Optional[Dict[str, Any]] = None
+    persona_mode: str = "self"
+    transport: str = "own"
+    import_context: Optional[ImportPayload] = None
 
 
 class CloudChatPayload(BaseModel):
@@ -242,91 +517,119 @@ class CloudChatPayload(BaseModel):
     scammer_message: str
 
 
+def _persona_of(session: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        return json.loads(session.get("persona_details") or "{}")
+    except json.JSONDecodeError:
+        return {}
+
+
 def _cloud_image_url(persona: Dict[str, Any]) -> str:
-    """Receipt URL the terminal can show as an attached screenshot."""
     params = {
         "upi": persona.get("scammer_upi") or "scam.target@okaxis",
         "amount": str(persona.get("amount") or "499"),
-        "sender_name": persona.get("fake_name") or "Rahul Sharma",
+        "sender_name": persona.get("fake_name") or "",
     }
-    query = "&".join(f"{k}={urllib.parse.quote(str(v))}" for k, v in params.items())
+    query = "&".join(f"{k}={urllib.parse.quote(str(v))}" for k, v in params.items() if v)
     return f"/api/co-pilot/fake-receipt?{query}"
 
 
 @router.post("/init-cloud")
 def init_cloud_session(payload: InitCloudPayload):
-    """Boots an autonomous decoy session and returns its first in-character greeting."""
+    """Boots a Mode 2 session.
+
+    - transport 'own'    -> user connected their own WhatsApp (live, QR path)
+    - transport 'virtual'-> coming soon (system's own number, demo only)
+    - persona_mode 'self'-> talking as the original victim, no fake identity
+    - persona_mode 'character' -> talking as a named relative (needs name+excuse)
+    """
     phone = (payload.scammer_phone or "").strip() or "UNKNOWN"
-    relation = (payload.relation or "family member").strip()
+    persona_mode = (payload.persona_mode or "self").strip().lower()
+    if persona_mode not in ("self", "character"):
+        raise HTTPException(status_code=422, detail="persona_mode must be 'self' or 'character'")
+    transport = (payload.transport or "own").strip().lower()
+    relation = (payload.relation or "").strip()
     fake_name = (payload.fake_name or "").strip()
     excuse = (payload.excuse or "").strip()
     category = (payload.scam_category or "General Suspicious").strip()
 
-    if not excuse:
-        raise HTTPException(status_code=422, detail="excuse is required")
+    if persona_mode == "character" and not fake_name:
+        raise HTTPException(status_code=422, detail="fake_name is required for a relative persona")
 
     case_id = f"CLOUD-{uuid.uuid4().hex[:8].upper()}"
+    imported = payload.import_context or ImportPayload()
+    case_context = dict(payload.case_context or imported.case_context or {})
+    if imported.bait_amount:
+        case_context["amount"] = imported.bait_amount
+
     persona = {
-        "relation": relation,
-        "fake_name": fake_name or "Rahul Sharma",
+        "persona_mode": persona_mode,
+        "relation": relation or ("the person they originally messaged" if persona_mode == "self" else "family member"),
+        "fake_name": fake_name,
         "excuse": excuse,
         "scam_category": category,
         "scammer_upi": (payload.scammer_upi or "").strip(),
-        "amount": "499",
-        "case_context": payload.case_context or {},
+        "amount": str(case_context.get("amount") or "499"),
+        "case_context": case_context,
+        "transport": transport,
     }
 
     with get_db_connection() as conn:
         conn.execute(
             """INSERT INTO cloud_sessions
                    (case_id, scammer_phone, relation, fake_name, excuse,
-                    scam_category, persona_details, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE')""",
-            (case_id, phone, relation, fake_name, excuse,
-             category, json.dumps(persona, ensure_ascii=False)),
+                    scam_category, persona_details, status, phone_norm, persona_mode, transport)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)""",
+            (case_id, phone, persona["relation"], fake_name, excuse,
+             category, json.dumps(persona, ensure_ascii=False),
+             _norm_phone(phone), persona_mode, transport),
         )
 
-        seed = (payload.context or "").strip()
+        # Carry over whatever already happened in Mode 1 / Tab 1.
+        seed = (payload.context or imported.original_message or "").strip()
         if seed:
             conn.execute(
                 "INSERT INTO cloud_messages (case_id, sender_role, message_text) VALUES (?, 'scammer', ?)",
                 (case_id, seed),
             )
+        for turn in (imported.copilot_turns or []):
+            role = (turn.get("role") or "").strip().lower()
+            text = (turn.get("text") or "").strip()
+            if not text or role not in ("scammer", "ai"):
+                continue
+            conn.execute(
+                "INSERT INTO cloud_messages (case_id, sender_role, message_text) VALUES (?, ?, ?)",
+                (case_id, role, text),
+            )
         conn.commit()
 
-    system = build_cloud_system(relation, persona["fake_name"], excuse, category, payload.case_context)
-    opener_seed = seed or (
-        f"The scammer has been messaged about a {category} payment request and is waiting "
-        "for a reply from this new number."
-    )
-    greeting = generate_reply(
-        system + "\n\nThis is the FIRST message of the chat, so write it in character as your "
-        "own opening message rather than an answer.",
-        chat_history=[{"role": "scammer", "text": opener_seed}],
-    )
+    if seed:
+        mine_details(case_id, seed)
 
-    with get_db_connection() as conn:
-        conn.execute(
-            "INSERT INTO cloud_messages (case_id, sender_role, message_text, send_image) VALUES (?, 'ai', ?, ?)",
-            (case_id, greeting["reply"], 1 if greeting["send_image"] else 0),
-        )
-        conn.commit()
-
+    # No blocking AI greeting here — the modal must open instantly.
+    # First AI reply is generated lazily on the first real/simulated scammer message.
     return {
-        "status": "success",
+        "status": "Trap Initialized",
         "case_id": case_id,
         "scammer_phone": phone,
+        "phone_norm": _norm_phone(phone),
+        "persona_mode": persona_mode,
+        "transport": transport,
         "persona": persona,
-        "greeting": greeting["reply"],
-        "provider": greeting["provider"],
+        "message": "",
+        "greeting": "",
+        "waiting": "Waiting for the scammer's message…",
+        "provider": "none",
         "chat_history": _cloud_history(case_id),
+        "extracted": get_extracted(case_id)["details"],
+        "active_mode": get_active_mode(),
     }
 
 
 def _cloud_history(case_id: str) -> List[Dict[str, Any]]:
     with get_db_connection() as conn:
         rows = conn.execute(
-            "SELECT id, sender_role, message_text, send_image, timestamp FROM cloud_messages "
+            "SELECT id, sender_role, message_text, send_image, send_state, timestamp FROM cloud_messages "
             "WHERE case_id = ? ORDER BY id ASC",
             (case_id,),
         ).fetchall()
@@ -337,33 +640,73 @@ def _cloud_history(case_id: str) -> List[Dict[str, Any]]:
 def get_cloud_history(case_id: str):
     with get_db_connection() as conn:
         session = conn.execute(
-            "SELECT case_id, scammer_phone, persona_details, status FROM cloud_sessions WHERE case_id = ?",
+            "SELECT case_id, scammer_phone, persona_details, status, persona_mode, transport "
+            "FROM cloud_sessions WHERE case_id = ?",
             (case_id,),
         ).fetchone()
     if session is None:
         raise HTTPException(status_code=404, detail="cloud session not found")
-    return {"session": dict(session), "chat_history": _cloud_history(case_id)}
+    return {
+        "session": dict(session),
+        "chat_history": _cloud_history(case_id),
+        "extracted": get_extracted(case_id)["details"],
+        "active_mode": get_active_mode(),
+    }
+
+
+class SentMessagePayload(BaseModel):
+    case_id: str
+    scammer_message: str
+    source: str = "manual"
 
 
 @router.post("/chat-message")
-def cloud_chat_message(payload: CloudChatPayload):
-    """One scammer turn in, one in-character decoy turn out (stateless-ish:
-    the transcript is re-read from SQLite so refreshes keep context)."""
+def cloud_chat_message(payload: SentMessagePayload):
+    """Manual turn from the Mode 2 UI box.
+
+    Same exactly-once claim as the webhook: if the bridge already answered this
+    exact text we return the stored reply instead of generating a second one."""
     text = (payload.scammer_message or "").strip()
     if not text:
         raise HTTPException(status_code=422, detail="scammer_message is required")
 
     with get_db_connection() as conn:
         session = conn.execute(
-            "SELECT * FROM cloud_sessions WHERE case_id = ?", (payload.case_id,)
+            "SELECT * FROM cloud_sessions WHERE case_id = ?", (payload.case_id,),
         ).fetchone()
     if session is None:
         raise HTTPException(status_code=404, detail="cloud session not found")
 
-    try:
-        persona = json.loads(session["persona_details"] or "{}")
-    except json.JSONDecodeError:
-        persona = {}
+    persona = _persona_of(dict(session))
+    phone_norm = _norm_phone(session["scammer_phone"] or "")
+    dedup_key = f"{phone_norm}:{hashlib.sha1(f'{phone_norm}|{text}'.encode('utf-8')).hexdigest()}"
+
+    with get_db_connection() as conn:
+        try:
+            conn.execute(
+                "INSERT INTO inbound_queue (dedup_key, phone_norm, text, case_id) VALUES (?, ?, ?, ?)",
+                (dedup_key, phone_norm, text, payload.case_id),
+            )
+            claimed = conn.execute(
+                "UPDATE inbound_queue SET claimed_by = 'manual' "
+                "WHERE dedup_key = ? AND claimed_by IS NULL",
+                (dedup_key,),
+            ).rowcount
+            conn.commit()
+        except Exception:
+            claimed = 0
+            conn.rollback()
+
+    if claimed != 1:
+        # Someone (webhook or an earlier click) already answered this text.
+        history = _cloud_history(payload.case_id)
+        last_ai = next((m for m in reversed(history) if m["sender_role"] == "ai"), None)
+        return {
+            "status": "duplicate",
+            "case_id": payload.case_id,
+            "ai_reply": last_ai["message_text"] if last_ai else "",
+            "chat_history": history,
+        }
 
     with get_db_connection() as conn:
         conn.execute(
@@ -371,23 +714,27 @@ def cloud_chat_message(payload: CloudChatPayload):
             (payload.case_id, text),
         )
         conn.commit()
+    mine_details(payload.case_id, text)
 
     history = _cloud_history(payload.case_id)
     system = build_cloud_system(
         session["relation"] or persona.get("relation") or "family member",
-        persona.get("fake_name") or session["fake_name"] or "Rahul Sharma",
-        session["excuse"] or persona.get("excuse") or "the original number was not reachable",
+        persona.get("fake_name") or session["fake_name"] or "",
+        session["excuse"] or persona.get("excuse") or "",
         session["scam_category"] or persona.get("scam_category") or "General Suspicious",
         persona.get("case_context") or {},
+        persona_mode=persona.get("persona_mode", "self"),
     )
     result = generate_reply(system, chat_history=history)
 
     with get_db_connection() as conn:
         conn.execute(
-            "INSERT INTO cloud_messages (case_id, sender_role, message_text, send_image) VALUES (?, 'ai', ?, ?)",
+            "INSERT INTO cloud_messages (case_id, sender_role, message_text, send_image, send_state) "
+            "VALUES (?, 'ai', ?, ?, 0)",
             (payload.case_id, result["reply"], 1 if result["send_image"] else 0),
         )
         conn.commit()
+    mine_details(payload.case_id, result["reply"])
 
     return {
         "status": "success",
@@ -397,4 +744,86 @@ def cloud_chat_message(payload: CloudChatPayload):
         "image_url": _cloud_image_url(persona) if result["send_image"] else None,
         "provider": result["provider"],
         "chat_history": _cloud_history(payload.case_id),
+        "extracted": get_extracted(payload.case_id)["details"],
     }
+
+
+class DemoTurnPayload(BaseModel):
+    case_id: Optional[str] = None
+    scam_category: Optional[str] = "General Suspicious"
+    persona_mode: str = "self"
+    relation: str = ""
+    fake_name: str = ""
+    excuse: str = ""
+    case_context: Optional[Dict[str, Any]] = None
+    last_message: Optional[str] = None
+    side: str = "scammer"
+    history: Optional[List[Dict[str, str]]] = None
+    turn_index: int = 0
+    total_turns: int = 8
+
+
+@router.post("/demo-turn")
+def demo_turn(payload: DemoTurnPayload):
+    """One step of the DEMO walkthrough.
+
+    `side='scammer'` -> what the scammer would plausibly say next
+    `side='decoy'`   -> what our system would send back
+    `side='extract'` -> mine details from the finished demo transcript
+
+    The demo never emits strategy, prompts or internal rules to the caller."""
+    category = (payload.scam_category or "General Suspicious").strip()
+    persona_mode = (payload.persona_mode or "self").strip().lower()
+    case_context = payload.case_context or {}
+    last = (payload.last_message or "").strip()
+
+    # Finish step: mine the whole demo transcript for anything the scammer
+    # handed over. Uses the real extractor so the panel matches live mode.
+    if payload.side == "extract":
+        full_text = last
+        found: List[Dict[str, str]] = []
+        if full_text:
+            try:
+                ent = extract_entities(full_text)
+                for key, label in (
+                    ("upis", "UPI"),
+                    ("phones", "PHONE"),
+                    ("bank_accounts", "BANK_AC"),
+                    ("ifsc_codes", "IFSC"),
+                ):
+                    for v in (ent.get(key) or []):
+                        v = str(v).strip()
+                        if v:
+                            found.append({"type": label, "value": v})
+            except Exception:
+                pass
+        return {"status": "success", "side": "extract", "details": found}
+
+    if payload.side == "scammer":
+        system = build_demo_scammer_system(category, case_context, turn_index=payload.turn_index, total_turns=payload.total_turns)
+    else:
+        system = build_demo_decoy_system(category, case_context, turn_index=payload.turn_index, total_turns=payload.total_turns)
+
+    # Feed the whole running conversation so every turn stays coherent.
+    turns = list(payload.history or [])
+    if last:
+        turns.append({"role": "scammer" if payload.side == "scammer" else "ai", "text": last})
+
+    result = generate_reply(
+        system + "\n\nOutput only the message text. No labels, no quotes, no explanation.",
+        chat_history=turns,
+    )
+
+    details: List[Dict[str, str]] = []
+    if payload.case_id:
+        mine_details(payload.case_id, result["reply"])
+        details = get_extracted(payload.case_id)["details"]
+
+    return {
+        "status": "success",
+        "side": payload.side,
+        "text": result["reply"],
+        "provider": result["provider"],
+        "details": details,
+    }
+

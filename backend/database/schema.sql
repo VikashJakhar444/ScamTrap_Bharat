@@ -91,3 +91,30 @@ CREATE TABLE IF NOT EXISTS cloud_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_cloud_msg_case ON cloud_messages (case_id);
+
+-- Global key-value app state (active_mode, bridge token, etc).
+CREATE TABLE IF NOT EXISTS app_state (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
+-- One row per inbound WhatsApp message; claimed_by = exactly-once reply guard.
+CREATE TABLE IF NOT EXISTS inbound_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dedup_key TEXT UNIQUE NOT NULL,
+    phone_norm TEXT,
+    text TEXT NOT NULL,
+    claimed_by TEXT,
+    case_id TEXT,
+    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Structured facts the system mined out of a conversation (bank a/c, IFSC...).
+CREATE TABLE IF NOT EXISTS extracted_details (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id TEXT,
+    detail_type TEXT NOT NULL,
+    detail_value TEXT NOT NULL,
+    source_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

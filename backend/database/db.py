@@ -15,6 +15,15 @@ def get_db_connection() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     return conn
 
+def _migrate_columns(conn: sqlite3.Connection, table: str, wanted: Dict[str, str]) -> None:
+    """Adds any missing columns to an existing table (SQLite has no
+    `ADD COLUMN IF NOT EXISTS`, so we introspect)."""
+    have = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+    for col, decl in wanted.items():
+        if col not in have:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+
+
 def init_db():
     """Initializes the database schema and seeds initial data if empty."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -22,6 +31,17 @@ def init_db():
     with get_db_connection() as conn:
         with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
             conn.executescript(f.read())
+
+        # Upgrade pre-existing databases in place.
+        _migrate_columns(conn, "cloud_sessions", {
+            "phone_norm": "TEXT",
+            "persona_mode": "TEXT NOT NULL DEFAULT 'self'",
+            "transport": "TEXT NOT NULL DEFAULT 'own'",
+        })
+        _migrate_columns(conn, "cloud_messages", {
+            "send_state": "INTEGER NOT NULL DEFAULT 0",
+        })
+        conn.commit()
         
         # Check if scam_identifiers table has records
         cursor = conn.execute("SELECT COUNT(*) FROM scam_identifiers")

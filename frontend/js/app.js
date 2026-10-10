@@ -21,7 +21,16 @@ const state = {
   baitAmount: '',
   latestBait: null,
   lastVerdict: null,   // normalised shape consumed by renderVerdict()
-  lastReport: null     // raw /api/checker/analyze* response (layers, principles)
+  lastReport: null,    // raw /api/checker/analyze* response (layers, principles)
+  m2Option: 'self',
+  cloudAuto: false,
+  demoRunning: false,
+  bridgePoll: null,
+  cloudCaseId: null,
+  cloudHistory: [],
+  targetPhone: '',
+  targetCategory: '',
+  copilotHistory: []
 };
 
 /* --------------------------------------------------------------------------
@@ -38,11 +47,33 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTargetBar();
   loadEvidence();
   checkHealth();
+
+  // Restore the last active tab. The head <style id="tab-boot"> already made
+  // it visible pre-paint; here we just sync aria/tabindex classes and remove
+  // the override style — no smooth-scroll on load.
+  let restoredTab = 'tab-checker';
+  try {
+    const savedTab = localStorage.getItem('stb_active_tab');
+    if (savedTab && document.getElementById(savedTab)) {
+      restoredTab = savedTab;
+      document.querySelectorAll('[role="tab"]').forEach((tab) => {
+        const active = tab.dataset.tab === savedTab;
+        tab.setAttribute('aria-selected', String(active));
+        if (tab.closest('[role="tablist"]')) tab.tabIndex = active ? 0 : -1;
+      });
+      document.querySelectorAll('.tab-content-pane').forEach((pane) => {
+        pane.classList.toggle('is-active', pane.id === savedTab);
+      });
+    }
+  } catch (e) { /* private mode */ }
+  if (ui['hero-main']) ui['hero-main'].hidden = restoredTab !== 'tab-checker';
+  const boot = document.getElementById('tab-boot');
+  if (boot) boot.textContent = '';
 });
 
 function cacheDom() {
   [
-    'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region',
+    'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region', 'hero-main',
     'quick-search-input', 'quick-search-btn', 'chip-scam-upi', 'chip-scam-msg',
     'scam-msg-input', 'analyze-msg-btn', 'btn-clear-tab1',
     'dropzone-box', 'scam-img-input',
@@ -74,7 +105,14 @@ function cacheDom() {
     'cloud-form', 'm2-relation', 'm2-name', 'm2-excuse', 'm2-custom',
     'm2-custom-wrap', 'btn-m2-deploy', 'cloud-terminal', 'cloud-chat-box',
     'cloud-case-chip', 'cloud-status-text', 'cloud-node-name',
-    'm2-scammer-input', 'btn-m2-send', 'btn-m2-sim', 'btn-m2-reset',
+    'm2-modal', 'm2-modal-backdrop', 'btn-m2-modal-close', 'btn-m2-open',
+    'm2-steps', 'm2-step-1', 'm2-step-2', 'm2-step-3-live', 'm2-step-3-soon',
+    'btn-m2-step1-next', 'btn-m2-step2-back', 'btn-m2-step2-next',
+    'm2-chooser', 'btn-m2-opt-self', 'btn-m2-opt-system', 'm2-char-fields',
+    'card-live', 'card-soon', 'live-chip', 'qr-area', 'qr-img', 'qr-placeholder',
+    'm2-automate', 'live-scammer-phone', 'btn-m2-demo-sys', 'btn-demo-stop', 'btn-demo-run',
+    'demo-player', 'demo-chat-box', 'demo-details', 'demo-details-list', 'demo-wa-frame', 'demo-chat-name',
+    'm2-tab-live', 'm2-tab-demo', 'm2-panel-live', 'm2-panel-demo',
     'banner-case-id', 'banner-hash', 'ev-upi-list', 'ev-bank-list',
     'ev-device', 'ev-transcript',
     'kpi-reports', 'kpi-blacklisted', 'kpi-cases', 'kpi-resolved',
@@ -155,6 +193,11 @@ function switchTab(targetId, scrollEl) {
     pane.classList.toggle('is-active', pane.id === targetId);
   });
 
+  try { localStorage.setItem('stb_active_tab', targetId); } catch (e) { /* private mode */ }
+
+  // Hero + stats ledger only on Tab 1 (Checker).
+  if (ui['hero-main']) ui['hero-main'].hidden = targetId !== 'tab-checker';
+
   ui['mobile-tablist'].classList.remove('is-open');
   ui['hamburger-btn'].setAttribute('aria-expanded', 'false');
 
@@ -221,6 +264,15 @@ function initGlobalHandlers() {
       switchTab(el.dataset.gotoTab, document.getElementById(el.dataset.gotoTab));
     });
   });
+
+  // Tab 2 hero: "Start the decoy" scrolls to the accordion
+  const hpScrollBtn = document.getElementById('hero-hp-scroll-btn');
+  if (hpScrollBtn) {
+    hpScrollBtn.addEventListener('click', () => {
+      const acc = document.getElementById('acc-btn-cloud') || document.getElementById('acc-btn-self');
+      if (acc) acc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 
   document.querySelectorAll('[data-copy-target]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -397,6 +449,12 @@ async function postJson(url, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -855,21 +913,49 @@ function initHoneypot() {
     copyToClipboard(text);
   });
 
-  // Mode 2 · Cloud AI node -------------------------------------------------
-  ui['m2-excuse'].addEventListener('change', () => {
-    ui['m2-custom-wrap'].hidden = ui['m2-excuse'].value !== 'custom';
-    if (ui['m2-excuse'].value === 'custom') ui['m2-custom'].focus();
+  // Mode 2 · Cloud AI node — options inline in accordion, result modal ----
+  if (ui['btn-m2-opt-self']) {
+    ui['btn-m2-opt-self'].addEventListener('click', () => selectM2Option('self'));
+    ui['btn-m2-opt-system'].addEventListener('click', () => selectM2Option('system'));
+  }
+  if (ui['btn-m2-deploy']) ui['btn-m2-deploy'].addEventListener('click', handleDeploy);
+  document.querySelectorAll('input[name="m2-persona"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      if (ui['m2-char-fields']) ui['m2-char-fields'].hidden = r.value !== 'character' || !r.checked;
+    });
   });
-  ui['cloud-form'].addEventListener('submit', (e) => { e.preventDefault(); deployCloudNode(); });
-  ui['btn-m2-send'].addEventListener('click', sendCloudMessage);
-  ui['m2-scammer-input'].addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendCloudMessage();
+
+  if (ui['btn-m2-modal-close']) ui['btn-m2-modal-close'].addEventListener('click', closeM2Modal);
+  if (ui['m2-modal-backdrop']) ui['m2-modal-backdrop'].addEventListener('click', closeM2Modal);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && ui['m2-modal'] && !ui['m2-modal'].classList.contains('is-hidden')) closeM2Modal();
   });
-  ui['btn-m2-sim'].addEventListener('click', () => {
-    ui['m2-scammer-input'].value = t('t2_m2_sim_text');
-    sendCloudMessage();
+
+  ui['cloud-form'].addEventListener('submit', (e) => { e.preventDefault(); });
+
+  if (ui['m2-automate']) {
+    ui['m2-automate'].addEventListener('change', () => {
+      state.cloudAuto = ui['m2-automate'].checked;
+    });
+  }
+  if (ui['live-scammer-phone']) {
+    ui['live-scammer-phone'].addEventListener('input', () => {
+      state.targetPhone = ui['live-scammer-phone'].value.trim();
+    });
+  }
+  if (ui['btn-m2-demo-sys']) ui['btn-m2-demo-sys'].addEventListener('click', () => { switchM2Tab('demo'); startDemo(); });
+  if (ui['btn-demo-run']) ui['btn-demo-run'].addEventListener('click', () => startDemo());
+  if (ui['btn-demo-stop']) ui['btn-demo-stop'].addEventListener('click', stopDemo);
+
+  // Modal tabs (Live connection | Preview demo) -----------------------------
+  ['m2-tab-live', 'm2-tab-demo'].forEach((id) => {
+    if (!ui[id]) return;
+    ui[id].addEventListener('click', () => switchM2Tab(ui[id].dataset.m2tab));
   });
-  ui['btn-m2-reset'].addEventListener('click', resetCloudNode);
+
+  // Bridge QR / status polling (only while the live card is open) -----------
+  state.bridgePoll = null;
+  selectM2Option(null);
 
   // Chrome -----------------------------------------------------------------
   ui['btn-refresh-status'].addEventListener('click', async (e) => {
@@ -910,6 +996,9 @@ function toggleAccordion(btn) {
     btn.setAttribute('aria-expanded', 'true');
     item.classList.add('is-open');
     if (panel) panel.hidden = false;
+    // Scroll the opened accordion header into view so its content is visible.
+    const top = item.getBoundingClientRect().top + window.pageYOffset - 80;
+    window.scrollTo({ top, behavior: 'smooth' });
   }
 }
 
@@ -1294,54 +1383,391 @@ async function generateNextReply() {
   }
 }
 
-/** Mode 2 · boots the autonomous decoy and opens its WhatsApp terminal. */
-async function deployCloudNode() {
-  const excuseValue = ui['m2-excuse'].value;
-  const excuse = excuseValue === 'custom'
-    ? ui['m2-custom'].value.trim()
-    : t(`t2_exc_${excuseValue === 'battery' ? 'battery' : 'market'}`);
-  if (!excuse) {
-    toast(t('t2_m2_err'), 'error');
-    ui['m2-custom'].focus();
-    return;
+/* --------------------------------------------------------------------------
+   Mode 2 · options inline in accordion → deploy → result modal
+   -------------------------------------------------------------------------- */
+function selectM2Option(which) {
+  state.m2Option = which;
+  if (ui['btn-m2-opt-self']) {
+    ui['btn-m2-opt-self'].classList.toggle('is-active', which === 'self');
+    ui['btn-m2-opt-self'].setAttribute('aria-pressed', String(which === 'self'));
+  }
+  if (ui['btn-m2-opt-system']) {
+    ui['btn-m2-opt-system'].classList.toggle('is-active', which === 'system');
+    ui['btn-m2-opt-system'].setAttribute('aria-pressed', String(which === 'system'));
+  }
+  if (ui['cloud-form']) ui['cloud-form'].hidden = which !== 'system';
+  if (ui['btn-m2-deploy']) ui['btn-m2-deploy'].disabled = !which;
+}
+
+/** Deploy button: validate → boot backend → open the right result card. */
+async function handleDeploy() {
+  const which = state.m2Option;
+  if (!which) { toast(t('t2_m2_err'), 'error'); return; }
+
+  let excuse = '';
+  if (which === 'system') {
+    excuse = ((ui['m2-excuse'] && ui['m2-excuse'].value.trim()) || '');
+    if (!excuse) {
+      toast(t('t2_m2_err'), 'error');
+      if (ui['m2-excuse']) ui['m2-excuse'].focus();
+      return;
+    }
+  } else {
+    excuse = t('ph_m2_excuse');
   }
 
+  const personaMode = which === 'self'
+    ? 'self'
+    : (document.querySelector('input[name="m2-persona"]:checked')?.value || 'self');
+
+  const ok = await deployCloudNode(personaMode, excuse, which);
+  if (!ok) return;
+
+  if (ui['m2-step-3-live']) {
+    ui['m2-step-3-live'].hidden = which !== 'self';
+    ui['m2-step-3-live'].classList.toggle('is-active', which === 'self');
+  }
+  if (ui['m2-step-3-soon']) {
+    ui['m2-step-3-soon'].hidden = which !== 'system';
+    ui['m2-step-3-soon'].classList.toggle('is-active', which === 'system');
+  }
+  switchM2Tab('live');
+  if (ui['m2-modal']) {
+    ui['m2-modal'].classList.remove('is-hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  if (which === 'self') startBridgePolling();
+  // Always poll the live transcript so webhook-driven messages appear in the chat box.
+  startCloudChatPolling();
+}
+
+/** Switch the modal between the Live connection and Preview demo panels. */
+function switchM2Tab(which) {
+  ['live', 'demo'].forEach((key) => {
+    const tab = ui[`m2-tab-${key}`];
+    const panel = ui[`m2-panel-${key}`];
+    const active = key === which;
+    if (tab) {
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    }
+    if (panel) {
+      panel.classList.toggle('is-active', active);
+      panel.hidden = !active;
+    }
+  });
+  if (which === 'demo' && ui['demo-player']) ui['demo-player'].hidden = false;
+}
+
+function closeM2Modal() {
+  if (!ui['m2-modal']) return;
+  ui['m2-modal'].classList.add('is-hidden');
+  document.body.style.overflow = '';
+  stopBridgePolling();
+  stopCloudChatPolling();
+  stopDemo();
+  // After the modal closes, bring the honeypot tab into view so the user
+  // doesn't land on the hero with no visible tab content.
+  const activeTab = document.querySelector('.tab-content-pane.is-active');
+  if (activeTab) scrollToPane(activeTab);
+}
+
+/** Boots the autonomous decoy session on the backend. Returns true on success. */
+async function deployCloudNode(personaMode, excuse, transport) {
   const btn = ui['btn-m2-deploy'];
-  const label = btn.querySelector('span');
+  const label = btn ? btn.querySelector('span') : null;
   const prevLabel = label ? label.textContent : '';
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   if (label) label.textContent = t('btn_sending');
 
   state.cloudCaseId = 'DEPLOYING';
-  ui['cloud-terminal'].hidden = false;
-  ui['cloud-chat-box'].innerHTML = '';
+  if (ui['cloud-terminal']) ui['cloud-terminal'].hidden = false;
+  if (ui['cloud-chat-box']) ui['cloud-chat-box'].innerHTML = '';
   cloudAppendSystem(t('t2_cloud_deploying'));
   setCloudStatus(t('t2_cloud_deploying'));
 
   try {
+    try { await postJson('/api/honeypot/set-mode', { mode: 'mode2' }); } catch (e) { console.warn(e); }
+
+    // Prefer the live-card phone field, fall back to state.
+    const livePhone = (ui['live-scammer-phone'] && ui['live-scammer-phone'].value.trim()) || '';
+    if (livePhone) state.targetPhone = livePhone;
+
     const res = await postJson('/api/honeypot/init-cloud', {
       scammer_phone: state.targetPhone || 'UNKNOWN',
-      relation: ui['m2-relation'].value,
-      fake_name: ui['m2-name'].value.trim(),
+      relation: personaMode === 'character' ? (ui['m2-relation']?.value || '') : '',
+      fake_name: personaMode === 'character' ? (ui['m2-name']?.value.trim() || '') : '',
       excuse,
       scam_category: state.targetCategory || 'General Suspicious',
       context: (ui['scam-msg-input'] && ui['scam-msg-input'].value.trim().slice(0, 500)) || null,
-      case_context: buildCaseContext()
+      case_context: buildCaseContext(),
+      persona_mode: personaMode,
+      transport: transport === 'self' ? 'own' : 'system',
+      import_context: {
+        case_context: buildCaseContext(),
+        copilot_turns: (state.copilotHistory || []).slice(-20),
+        original_message: state.originalMessage || '',
+        target_phone: state.targetPhone || '',
+        bait_amount: state.baitAmount || ''
+      }
     });
 
     state.cloudCaseId = res.case_id;
     state.cloudHistory = res.chat_history || [];
-    ui['cloud-case-chip'].textContent = res.case_id;
+    if (ui['cloud-case-chip']) ui['cloud-case-chip'].textContent = res.case_id;
+    // Show the scammer's number as the chat header, like a real WhatsApp chat.
+    if (ui['cloud-node-name']) {
+      const phone = res.scammer_phone || state.targetPhone || '—';
+      ui['cloud-node-name'].textContent = phone;
+      ui['cloud-node-name'].removeAttribute('data-i18n');
+    }
     renderCloudHistory();
     setCloudStatus(t('t2_cloud_ready'));
     toast(res.case_id, 'success');
-    ui['m2-scammer-input'].focus();
+    if (ui['m2-scammer-input']) ui['m2-scammer-input'].focus();
+    return true;
   } catch (err) {
     toastFromError(err, 'toast_error_network');
+    return false;
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = !state.m2Option;
     if (label) label.textContent = prevLabel;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Mode 2 · bridge QR polling
+   -------------------------------------------------------------------------- */
+function startBridgePolling() {
+  stopBridgePolling();
+  state.bridgePoll = setInterval(pollBridge, 3000);
+  pollBridge();
+}
+
+function stopBridgePolling() {
+  if (state.bridgePoll) { clearInterval(state.bridgePoll); state.bridgePoll = null; }
+}
+
+/** Poll the live chat transcript while the cloud session is active. */
+function startCloudChatPolling() {
+  stopCloudChatPolling();
+  state.cloudChatPoll = setInterval(pollCloudChat, 4000);
+  pollCloudChat();
+}
+
+function stopCloudChatPolling() {
+  if (state.cloudChatPoll) { clearInterval(state.cloudChatPoll); state.cloudChatPoll = null; }
+}
+
+async function pollCloudChat() {
+  if (!state.cloudCaseId || state.cloudCaseId === 'DEPLOYING') return;
+  try {
+    const res = await fetchJson(`/api/honeypot/cloud-history?case=${encodeURIComponent(state.cloudCaseId)}`);
+    const rows = (res.chat_history || []);
+    // Only re-render when the row count changed (new message arrived).
+    if (rows.length !== (state.cloudHistory || []).length) {
+      state.cloudHistory = rows;
+      renderCloudHistory();
+    }
+  } catch (err) { /* session may not exist yet */ }
+}
+
+async function pollBridge() {
+  try {
+    const res = await fetchJson('/api/honeypot/bridge-status');
+    if (ui['live-chip']) {
+      ui['live-chip'].textContent = res.connected ? t('t2_live_online') : t('t2_live_offline');
+      ui['live-chip'].classList.toggle('chip--emerald', !!res.connected);
+    }
+    if (res.connected) {
+      if (ui['qr-area']) ui['qr-area'].hidden = true;
+      stopBridgePolling();
+      return;
+    }
+    const qr = await fetchJson('/api/honeypot/bridge-qr');
+    const src = qr.qr_png || (qr.qr_data ? `data:image/png;base64,${qr.qr_data}` : null);
+    if (src && ui['qr-img']) {
+      ui['qr-img'].src = src;
+      ui['qr-img'].hidden = false;
+      if (ui['qr-placeholder']) ui['qr-placeholder'].hidden = true;
+      if (ui['qr-area']) ui['qr-area'].hidden = false;
+    }
+  } catch (err) { /* bridge not up yet — keep polling quietly */ }
+}
+
+/* --------------------------------------------------------------------------
+   Mode 2 · demo walkthrough (coherent AI dialogue, real extractor at the end)
+   -------------------------------------------------------------------------- */
+const DEMO_TURNS = 8;
+
+function demoAppend(className, text) {
+  const box = ui['demo-chat-box'];
+  if (!box) return;
+  const el = document.createElement('div');
+  el.className = className;
+  const body = document.createElement('div');
+  body.textContent = text;
+  const meta = document.createElement('div');
+  meta.className = 'wa-bubble-meta';
+  meta.innerHTML = `<span>${escapeHtml(nowTime())}</span>`;
+  el.appendChild(body);
+  el.appendChild(meta);
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function demoTyping(on) {
+  const box = ui['demo-chat-box'];
+  if (!box) return null;
+  if (on) {
+    const el = document.createElement('div');
+    el.className = 'wa-typing-indicator demo-typing';
+    el.innerHTML = '<i></i><i></i><i></i>';
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+    return el;
+  }
+  return null;
+}
+
+/** One entry of the running demo transcript the backend sees as history. */
+function demoHistoryEntry(side, text) {
+  return { role: side === 'scammer' ? 'scammer' : 'ai', text };
+}
+
+/* --------------------------------------------------------------------------
+   Hardcoded demo scripts — instant, zero AI tokens.
+   Each script: { details: [{type,value}], lines: [{side, text, delay_ms}] }
+   -------------------------------------------------------------------------- */
+const DEMO_SCRIPTS = [
+  {
+    // 1 — YouTube-likes / task scam (most common Indian WhatsApp scam 2024-25)
+    details: [
+      { type: 'UPI ID', value: 'rahul.sharma.ok@ybl' },
+      { type: 'Bank Account', value: '50100212345678' },
+      { type: 'IFSC', value: 'HDFC0001234' },
+      { type: 'Phone', value: '+91 98765 43210' },
+    ],
+    lines: [
+      { side: 'scammer', text: 'Hello, I am Rahul from Wave Digital Media. We are hiring part-time YouTube video likers. \u20B950 per like, easily \u20B95,000/day. Interested?', delay_ms: 400 },
+      { side: 'decoy', text: 'Yes how does it work?', delay_ms: 900 },
+      { side: 'scammer', text: 'First do 3 free trial tasks. Like this video and send me the screenshot: yt.be/dQw4w9WgXcQ. I will credit \u20B9150 to your account immediately.', delay_ms: 1100 },
+      { side: 'decoy', text: 'Done, sent screenshot. When do I get paid?', delay_ms: 900 },
+      { side: 'scammer', text: '\u20B9150 credited. Now to unlock daily \u20B92,500 tasks you must register. Pay the one-time registration fee of \u20B9499 via UPI: rahul.sharma.ok@ybl. This is refundable with your first payout.', delay_ms: 1200 },
+      { side: 'decoy', text: 'I tried but UPI is showing transaction failed. App issue I think.', delay_ms: 1000 },
+      { side: 'scammer', text: 'Okay use bank transfer then. Account: 50100212345678, IFSC HDFC0001234, name Rahul Sharma. Send Rs 499 and share the screenshot fast, the offer expires in 30 minutes.', delay_ms: 1300 },
+      { side: 'decoy', text: 'Net banking also not working right now. I will pay tonight from my office computer. Can you keep my slot?', delay_ms: 1000 },
+      { side: 'scammer', text: 'I cannot hold slots. 47 people are waiting. If you do not pay in 15 minutes I have to give your spot to someone else. Hurry up, just send Rs 499 anywhere: UPI or bank.', delay_ms: 1400 },
+      { side: 'decoy', text: 'My wife is not allowing payment right now. I will do it tomorrow morning for sure.', delay_ms: 900 },
+      { side: 'scammer', text: 'Tomorrow the rate increases to Rs 999. Tonight is last chance at Rs 499. I am giving you personal preference because you are smart and quick. Send now please.', delay_ms: 1200 },
+      { side: 'decoy', text: 'Ok I will try from my other phone. Give me 10 minutes.', delay_ms: 900 },
+    ],
+  },
+  {
+    // 2 — Fake bank KYC / account-block scam
+    details: [
+      { type: 'Phone', value: '+91 88001 23456' },
+      { type: 'UPI ID', value: 'kyc.verification@okaxis' },
+      { type: 'Bank Account', value: '30912345678' },
+    ],
+    lines: [
+      { side: 'scammer', text: 'Dear Customer, your bank KYC is incomplete. Your account will be BLOCKED in 2 hours. To update KYC immediately call this number or reply YES.', delay_ms: 400 },
+      { side: 'decoy', text: 'Which bank is this? How do I know this is real?', delay_ms: 900 },
+      { side: 'scammer', text: 'This is from the bank KYC department. I can see your account is linked to this number. Last 4 digits of your card are 4567, correct? If yes, reply YES to proceed.', delay_ms: 1100 },
+      { side: 'decoy', text: 'Ok yes that is my card. What do I need to do?', delay_ms: 900 },
+      { side: 'scammer', text: 'Good. To verify your identity you need to pay a refundable security deposit of \u20B91,999 via UPI to kyc.verification@okaxis. This amount will be reversed within 24 hours after verification.', delay_ms: 1200 },
+      { side: 'decoy', text: 'Why do I need to pay for KYC? That does not sound right.', delay_ms: 1000 },
+      { side: 'scammer', text: 'It is mandatory RBI regulation for re-verification. Without this your account will be frozen and all funds locked. Many customers have done it. Send \u20B91,999 now or your account gets blocked.', delay_ms: 1300 },
+      { side: 'decoy', text: 'My net banking is giving error. Can I pay by bank transfer instead?', delay_ms: 1000 },
+      { side: 'scammer', text: 'Yes use bank: Account 30912345678, IFSC UTIB0001234, Axis Bank. Send Rs 1,999 immediately. I am closing cases at 5 PM sharp, after that your account freezes permanently.', delay_ms: 1400 },
+      { side: 'decoy', text: 'I will do it tomorrow, my CA handles these payments.', delay_ms: 900 },
+      { side: 'scammer', text: 'There is no tomorrow. The system auto-blocks at midnight. You will lose access to all your money. Please send now, I am personally monitoring your case.', delay_ms: 1200 },
+    ],
+  },
+  {
+    // 3 — Fake lottery / prize scam
+    details: [
+      { type: 'Phone', value: '+91 77009 88776' },
+      { type: 'UPI ID', value: 'prize.claim.pay@paytm' },
+      { type: 'Bank Account', value: '9180012345678901' },
+    ],
+    lines: [
+      { side: 'scammer', text: 'CONGRATULATIONS! Your mobile number has won \u20B925,00,000 in the KBC lucky draw. Your prize code is KBC-88234. To claim, contact the prize department immediately.', delay_ms: 400 },
+      { side: 'decoy', text: 'Really? I did not enter any lottery. How did I win?', delay_ms: 900 },
+      { side: 'scammer', text: 'Your number was auto-selected from the mobile database. This is a government-verified lottery. I can see your name in the winner list. Just share your Aadhaar last 4 digits to confirm identity.', delay_ms: 1100 },
+      { side: 'decoy', text: 'Ok my Aadhaar ends with 4567. What happens next?', delay_ms: 900 },
+      { side: 'scammer', text: 'Identity confirmed. To transfer the \u20B925 lakh prize to your bank you need to pay the processing fee of \u20B98,500 only. This is a one-time government charge, fully deductible from your prize.', delay_ms: 1200 },
+      { side: 'decoy', text: 'I have to pay money to receive a prize? That is suspicious.', delay_ms: 1000 },
+      { side: 'scammer', text: 'It is standard lottery regulation worldwide. Without the processing fee the prize cannot be released. Once you pay I will transfer \u20B925,00,000 to your account within 1 hour. Many winners have done this.', delay_ms: 1300 },
+      { side: 'decoy', text: 'Can you deduct the fee from the prize amount instead?', delay_ms: 1000 },
+      { side: 'scammer', text: 'No that is not possible, the system does not allow it. Pay \u20B98,500 via UPI: prize.claim.pay@paytm. The prize amount will be in your account within the hour. This offer expires at 6 PM.', delay_ms: 1400 },
+      { side: 'decoy', text: 'I will think about it and let you know tomorrow.', delay_ms: 900 },
+      { side: 'scammer', text: 'After 6 PM the prize will be given to the next winner on the list. You will lose \u20B925,00,000 over \u20B98,500. Please do not make this mistake, send now!', delay_ms: 1200 },
+    ],
+  },
+];
+
+let demoScriptIndex = 0;
+
+async function startDemo() {
+  if (ui['demo-player']) ui['demo-player'].hidden = false;
+  if (ui['demo-chat-box']) ui['demo-chat-box'].innerHTML = '';
+  if (ui['demo-details']) ui['demo-details'].hidden = true;
+  if (ui['demo-details-list']) ui['demo-details-list'].innerHTML = '';
+  if (ui['btn-demo-run']) ui['btn-demo-run'].hidden = true;
+  if (ui['btn-demo-stop']) ui['btn-demo-stop'].hidden = false;
+  state.demoRunning = true;
+
+  // WhatsApp-style chat head.
+  if (ui['demo-chat-name']) {
+    const phone = state.targetPhone || 'Suspected scammer';
+    ui['demo-chat-name'].textContent = phone;
+    ui['demo-chat-name'].removeAttribute('data-i18n');
+  }
+
+  // Cycle through scripts so repeated runs feel fresh.
+  const script = DEMO_SCRIPTS[demoScriptIndex % DEMO_SCRIPTS.length];
+  demoScriptIndex += 1;
+
+  for (const line of script.lines) {
+    if (!state.demoRunning) break;
+    const typing = demoTyping(true);
+    await new Promise((r) => setTimeout(r, line.delay_ms || 800));
+    if (typing) typing.remove();
+    if (!state.demoRunning) break;
+    demoAppend(line.side === 'scammer' ? 'wa-bubble-scammer' : 'wa-bubble-decoy', line.text);
+  }
+
+  if (!state.demoRunning) {
+    demoAppend('wa-bubble-system', t('t2_demo_stopped'));
+    if (ui['btn-demo-run']) ui['btn-demo-run'].hidden = false;
+    if (ui['btn-demo-stop']) ui['btn-demo-stop'].hidden = true;
+    return;
+  }
+
+  // Show extracted details from the script.
+  if (ui['demo-details']) ui['demo-details'].hidden = false;
+  if (ui['demo-details-list']) {
+    ui['demo-details-list'].innerHTML = '';
+    script.details.forEach((d) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<b>${escapeHtml(d.type)}</b> — ${escapeHtml(d.value)}`;
+      ui['demo-details-list'].appendChild(li);
+    });
+  }
+  demoAppend('wa-bubble-system', t('t2_demo_done'));
+  state.demoRunning = false;
+  if (ui['btn-demo-run']) ui['btn-demo-run'].hidden = false;
+  if (ui['btn-demo-stop']) ui['btn-demo-stop'].hidden = true;
+}
+
+function stopDemo() {
+  state.demoRunning = false;
+  const el = document.querySelector('.demo-typing');
+  if (el) el.remove();
+  if (ui['btn-demo-run']) ui['btn-demo-run'].hidden = false;
+  if (ui['btn-demo-stop']) ui['btn-demo-stop'].hidden = true;
 }
 
 function setCloudStatus(text) {

@@ -9,7 +9,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261007c">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261007s">
+  <style id="tab-boot"></style>
+  <script>
+  (function () {
+    try {
+      var t = localStorage.getItem('stb_active_tab');
+      if (t && t !== 'tab-checker' && document.getElementById) {
+        // Flip the tab button active state in BOTH navbars before paint.
+        // Selectors target the button's data-tab attribute.
+        var css =
+          '#tab-checker{display:none!important}#' + t +
+          '{display:block!important}#hero-main{display:none!important}' +
+          // Desktop navbar: flip aria-selected
+          '#desktop-tablist [data-tab="tab-checker"][role="tab"]{' +
+          'background:none;color:var(--slate-600)!important;box-shadow:none!important;font-weight:600!important}' +
+          '#desktop-tablist [data-tab="' + t + '"][role="tab"]{' +
+          'background:var(--navy)!important;color:#fff!important;box-shadow:var(--shadow-md)!important;font-weight:700!important}' +
+          // Mobile navbar: same flip
+          '#mobile-tablist [data-tab="tab-checker"][role="tab"]{' +
+          'background:none;color:var(--slate-600)!important;box-shadow:none!important}' +
+          '#mobile-tablist [data-tab="' + t + '"][role="tab"]{' +
+          'background:var(--navy)!important;color:#fff!important;box-shadow:var(--shadow-md)!important}';
+        document.getElementById('tab-boot').textContent = css;
+      }
+    } catch (e) {}
+  })();
+  </script>
 </head>
 <body>
 
@@ -43,6 +69,7 @@
   <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
   <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
   <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
   <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
@@ -111,8 +138,8 @@
   </button>
 </div>
 
-<!-- ==================== HERO ==================== -->
-<section class="hero">
+<!-- ==================== HERO (Tab 1 only) ==================== -->
+<section class="hero" id="hero-main">
   <div class="shell hero__inner">
 
     <div>
@@ -463,6 +490,30 @@
   <!-- ============ TAB 2 · LIVE HONEYPOT ============ -->
   <section class="tab-content-pane" id="tab-honeypot" role="tabpanel" aria-labelledby="tab-btn-honeypot" tabindex="0">
 
+    <!-- Hero band for Tab 2 -->
+    <div class="hero hero--tab" id="hero-honeypot">
+      <div class="hero__inner">
+        <div>
+          <span class="hero__eyebrow">
+            <svg aria-hidden="true"><use href="#i-bot"></use></svg>
+            <span data-i18n="t2_hero_eyebrow">AI-powered scam baiter</span>
+          </span>
+          <h1 class="display hero__title" data-i18n="t2_hero_title" data-i18n-html>Trap the scammer <em>in their own web.</em></h1>
+          <p class="lede hero__lede" data-i18n="t2_hero_lede">Let the AI decoy waste their time, string them along and extract critical details — payment IDs, bank accounts, mule numbers.</p>
+          <div class="hero__cta">
+            <button class="btn btn--white btn--lg" type="button" data-goto-tab="tab-checker">
+              <svg aria-hidden="true"><use href="#i-search"></use></svg>
+              <span data-i18n="hero_cta_primary">Check a message now</span>
+            </button>
+            <button class="btn btn--on-navy btn--lg" type="button" id="hero-hp-scroll-btn">
+              <svg aria-hidden="true"><use href="#i-play"></use></svg>
+              <span data-i18n="t2_hero_cta">Start the decoy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-intro">
       <div>
         <div class="tab-intro__num" data-i18n="t2_num">Step 02</div>
@@ -674,11 +725,36 @@
         </div>
         <div class="acc__panel" id="acc-cloud" role="region" aria-labelledby="acc-btn-cloud" hidden>
           <div class="acc__panel-inner">
+            <p class="text-sm muted" data-i18n="t2_m2_intro">Choose how the AI should talk to the scammer, then deploy. You can connect your own WhatsApp for a live conversation, or preview the flow with a demo.</p>
 
-            <form class="m2__form" id="cloud-form" autocomplete="off">
-              <div class="m2__row">
+            <div class="m2__chooser" id="m2-chooser">
+              <button class="m2__opt m2__opt--self" id="btn-m2-opt-self" type="button" aria-pressed="false">
+                <span class="m2__opt-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></span>
+                <span class="m2__opt-body">
+                  <span class="m2__opt-title" data-i18n="t2_opt_self_title">Connect my WhatsApp</span>
+                  <span class="m2__opt-desc" data-i18n="t2_opt_self_desc">Reply from your own number — the scammer sees a real person.</span>
+                </span>
+              </button>
+              <button class="m2__opt m2__opt--system" id="btn-m2-opt-system" type="button" aria-pressed="false">
+                <span class="m2__opt-icon"><svg aria-hidden="true"><use href="#i-bot"></use></svg></span>
+                <span class="m2__opt-body">
+                  <span class="m2__opt-title" data-i18n="t2_opt_sys_title">Use a system-managed number</span>
+                  <span class="m2__opt-desc" data-i18n="t2_opt_sys_desc">Our AI operates a separate virtual number and handles the conversation for you.</span>
+                </span>
+              </button>
+            </div>
+
+            <form class="m2__form" id="cloud-form" autocomplete="off" hidden>
+              <div class="field">
+                <span class="field__label" data-i18n="t2_m2_who_label">Who should reply?</span>
+                <div class="m2__radios" role="radiogroup">
+                  <label class="m2__radio"><input type="radio" name="m2-persona" value="self" checked><span data-i18n="t2_m2_who_self">Myself (with a reason)</span></label>
+                  <label class="m2__radio"><input type="radio" name="m2-persona" value="character"><span data-i18n="t2_m2_who_char">Family member / Relative</span></label>
+                </div>
+              </div>
+              <div class="m2__row" id="m2-char-fields" hidden>
                 <div class="field">
-                  <label class="field__label" for="m2-relation" data-i18n="t2_m2_relation">Your relation to victim</label>
+                  <label class="field__label" for="m2-relation" data-i18n="t2_m2_relation">Relation</label>
                   <select id="m2-relation" class="input-control">
                     <option value="son" data-i18n="t2_rel_son">Son</option>
                     <option value="daughter" data-i18n="t2_rel_daughter">Daughter</option>
@@ -688,39 +764,94 @@
                   </select>
                 </div>
                 <div class="field">
-                  <label class="field__label" for="m2-name" data-i18n="t2_m2_name">Your fake name (optional)</label>
-                  <input type="text" id="m2-name" class="input-control" data-i18n="ph_m2_name" placeholder="Rahul" autocomplete="off">
+                  <label class="field__label" for="m2-name" data-i18n="t2_m2_name">Name</label>
+                  <input type="text" id="m2-name" class="input-control" placeholder="Rahul" autocomplete="off">
                 </div>
               </div>
-              <div class="m2__row">
-                <div class="field">
-                  <label class="field__label" for="m2-excuse" data-i18n="t2_m2_excuse">Why are you messaging from a new number?</label>
-                  <select id="m2-excuse" class="input-control">
-                    <option value="battery" data-i18n="t2_exc_battery">Papa's phone battery died</option>
-                    <option value="market" data-i18n="t2_exc_market">I'm in the market, his network is not working</option>
-                    <option value="custom" data-i18n="t2_exc_custom">Custom excuse…</option>
-                  </select>
-                </div>
-                <div class="field" id="m2-custom-wrap" hidden>
-                  <label class="field__label" for="m2-custom" data-i18n="t2_m2_custom">Your own excuse</label>
-                  <input type="text" id="m2-custom" class="input-control" data-i18n="ph_m2_custom" placeholder="Type the reason for the new number…" autocomplete="off">
-                </div>
-              </div>
-              <div class="m2__actions">
-                <button class="btn btn--primary" id="btn-m2-deploy" type="submit">
-                  <svg aria-hidden="true"><use href="#i-bot"></use></svg>
-                  <span data-i18n="t2_m2_deploy">Deploy AI cloud node</span>
-                </button>
-                <span class="text-xs muted" data-i18n="t2_m2_hint">The decoy stays in character and only ever asks for the scammer's own account details.</span>
+              <div class="field">
+                <label class="field__label" for="m2-excuse" data-i18n="t2_m2_excuse_label">Reason for using this number</label>
+                <input type="text" id="m2-excuse" class="input-control" data-i18n="ph_m2_excuse" placeholder="e.g. my phone battery died, messaging from a friend's phone" autocomplete="off">
               </div>
             </form>
+
+            <div class="m2__actions">
+              <button class="btn btn--primary" id="btn-m2-deploy" type="button" disabled>
+                <svg aria-hidden="true"><use href="#i-bot"></use></svg>
+                <span data-i18n="t2_m2_open">Deploy AI Cloud Node</span>
+              </button>
+              <span class="text-xs muted" data-i18n="t2_m2_hint">The decoy stays in character and only ever asks for the scammer's own account details.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ============ MODE 2 · DEPLOY RESULT MODAL ============ -->
+  <div class="m2-modal is-hidden" id="m2-modal" role="dialog" aria-modal="true" aria-labelledby="m2-modal-title">
+    <div class="m2-modal__backdrop" id="m2-modal-backdrop"></div>
+    <div class="m2-modal__panel">
+      <header class="m2-modal__head">
+        <div>
+          <span class="m2-modal__kicker" data-i18n="t2_modal_kicker">Cloud AI Node</span>
+          <h3 class="m2-modal__title" id="m2-modal-title" data-i18n="t2_modal_title">Deploy AI Cloud Node</h3>
+        </div>
+        <button class="m2-modal__close" id="btn-m2-modal-close" type="button" aria-label="Close">
+          <svg aria-hidden="true"><use href="#i-x"></use></svg>
+        </button>
+      </header>
+
+      <div class="m2-modal__body">
+
+        <div class="m2-modal__tabs" role="tablist" aria-label="Cloud node views">
+          <button class="m2-tab is-active" id="m2-tab-live" data-m2tab="live" type="button" role="tab" aria-selected="true" data-i18n="t2_tab_live">Live connection</button>
+          <button class="m2-tab" id="m2-tab-demo" data-m2tab="demo" type="button" role="tab" aria-selected="false" data-i18n="t2_tab_demo">Preview demo</button>
+        </div>
+
+        <!-- LIVE tab: QR/chat (own WhatsApp) OR coming-soon (system number) -->
+        <div class="m2-tabpanel is-active" id="m2-panel-live" data-m2panel="live" role="tabpanel">
+        <!-- LIVE card (own WhatsApp) -->
+        <div class="m2-step is-active" id="m2-step-3-live" hidden>
+          <div class="m2__card m2__card--live">
+            <div class="m2__card-head">
+              <div>
+                <span class="m2__card-kicker" data-i18n="t2_live_kicker">Live connection</span>
+                <h4 class="m2__card-title" data-i18n="t2_live_title">Connect your WhatsApp</h4>
+              </div>
+              <span class="chip" id="live-chip" data-i18n="t2_live_offline">Not connected</span>
+            </div>
+
+            <div class="m2__qr" id="qr-area">
+              <img id="qr-img" alt="WhatsApp QR code" hidden>
+              <div class="m2__qr-placeholder" id="qr-placeholder">
+                <svg aria-hidden="true"><use href="#i-qr"></use></svg>
+                <span data-i18n="t2_live_qr_wait">Waiting for the bridge to start… the QR code will appear here.</span>
+              </div>
+            </div>
+            <p class="text-xs muted" data-i18n="t2_live_qr_help">WhatsApp → Linked devices → Link a device, then scan this code.</p>
+
+            <div class="field" style="margin-top: var(--s-4);">
+              <label class="field__label" for="live-scammer-phone" data-i18n="t2_live_phone_label">Scammer's WhatsApp number</label>
+              <input type="tel" id="live-scammer-phone" class="input-control" placeholder="+91 98765 43210" autocomplete="off">
+              <p class="text-xs muted" style="margin-top: 4px;" data-i18n="t2_live_phone_help">The AI will only auto-reply to messages from this number.</p>
+            </div>
+
+            <div class="m2__row m2__row--center">
+              <label class="m2__toggle">
+                <input type="checkbox" id="m2-automate">
+                <span class="m2__toggle-track"><span class="m2__toggle-thumb"></span></span>
+                <span class="m2__toggle-label" data-i18n="t2_automate_label">Automate — the AI replies on its own</span>
+              </label>
+            </div>
 
             <div class="m2__term wa-chat-frame" id="cloud-terminal" hidden>
               <div class="chat-head">
                 <div class="chat-head__id">
                   <span class="chat-head__avatar"><svg aria-hidden="true"><use href="#i-bot"></use></svg></span>
                   <span>
-                    <span class="chat-head__name" id="cloud-node-name" data-i18n="t2_cloud_name">Cloud decoy node</span>
+                    <span class="chat-head__name" id="cloud-node-name">—</span>
                     <span class="chat-head__status">
                       <span class="pulse-dot"></span>
                       <span id="cloud-status-text" data-i18n="t2_cloud_status">Waiting for deployment…</span>
@@ -731,38 +862,107 @@
               </div>
 
               <div class="wa-chat-scroll" id="cloud-chat-box" role="log" aria-label="Cloud decoy transcript" aria-live="polite">
-                <div class="wa-bubble-system" data-i18n="t2_cloud_boot">Deploy the node to start the decoy conversation.</div>
+                <div class="wa-bubble-system" data-i18n="t2_cloud_boot">Deploy to start the decoy conversation.</div>
               </div>
+            </div>
+          </div>
+        </div>
 
-              <div class="chat-input-dock">
-                <div class="input-group">
-                  <label class="visually-hidden" for="m2-scammer-input" data-i18n="t2_m2_lbl">Message received from the scammer</label>
-                  <input type="text" id="m2-scammer-input" class="input-control" data-i18n="ph_m2_sim" placeholder="Paste their message here…" autocomplete="off">
-                  <button class="btn btn--primary" id="btn-m2-send" type="button">
-                    <svg aria-hidden="true"><use href="#i-send"></use></svg>
-                    <span data-i18n="btn_send">Send</span>
-                  </button>
-                </div>
-                <div class="row row--tight">
-                  <button class="btn btn--ghost btn--sm grow" id="btn-m2-sim" type="button">
-                    <svg aria-hidden="true"><use href="#i-zap"></use></svg>
-                    <span data-i18n="t2_m2_sim_btn">Simulate scammer opener</span>
-                  </button>
-                  <button class="btn btn--ghost btn--sm grow" id="btn-m2-reset" type="button">
-                    <svg aria-hidden="true"><use href="#i-refresh"></use></svg>
-                    <span data-i18n="btn_reset_chat">Reset</span>
-                  </button>
-                </div>
+        <!-- COMING SOON card (system-managed number) -->
+        <div class="m2-step" id="m2-step-3-soon" hidden>
+          <div class="m2__card m2__card--soon">
+            <div class="m2__card-head">
+              <div>
+                <span class="m2__card-kicker" data-i18n="t2_soon_kicker">Virtual number</span>
+                <h4 class="m2__card-title" data-i18n="t2_soon_title">System-managed number</h4>
+              </div>
+              <span class="chip chip--amber" data-i18n="t2_soon_badge">Coming soon</span>
+            </div>
+            <p class="text-sm" data-i18n="t2_soon_body">You do not need to connect your own WhatsApp. Once virtual-number support ships, the system will message the scammer from a dedicated number using the identity you selected.</p>
+
+            <div class="m2__flow" aria-hidden="true">
+              <div class="m2__flow-step">
+                <span class="m2__flow-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></span>
+                <span class="m2__flow-label" data-i18n="t2_flow_1">Your identity</span>
+              </div>
+              <span class="m2__flow-arrow"><svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></span>
+              <div class="m2__flow-step">
+                <span class="m2__flow-icon m2__flow-icon--accent"><svg aria-hidden="true"><use href="#i-phone"></use></svg></span>
+                <span class="m2__flow-label" data-i18n="t2_flow_2">Virtual number</span>
+              </div>
+              <span class="m2__flow-arrow"><svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></span>
+              <div class="m2__flow-step">
+                <span class="m2__flow-icon m2__flow-icon--danger"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+                <span class="m2__flow-label" data-i18n="t2_flow_3">Scammer</span>
               </div>
             </div>
 
+            <div class="m2__soon-meta">
+              <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_1">The AI answers in the scammer's own language and tone.</span></div>
+              <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_2">Every UPI ID, phone number and bank account they share is captured with a timestamp.</span></div>
+              <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_3">Export the whole transcript as evidence for a 1930 / cybercrime.gov.in complaint.</span></div>
+            </div>
+
+            <div class="m2__row m2__row--center">
+              <button class="btn btn--primary" id="btn-m2-demo-sys" type="button">
+                <svg aria-hidden="true"><use href="#i-play"></use></svg>
+                <span data-i18n="t2_demo_btn">Preview demo</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        </div><!-- /live tabpanel -->
+
+        <!-- DEMO tab -->
+        <div class="m2-tabpanel" id="m2-panel-demo" data-m2panel="demo" role="tabpanel" hidden>
+          <div class="m2__card m2__card--demo m2__card--demo-full" id="demo-player">
+            <div class="m2__card-head">
+              <div>
+                <span class="m2__card-kicker" data-i18n="t2_demo_kicker">Demo walkthrough</span>
+                <h4 class="m2__card-title" data-i18n="t2_demo_title">How the system handles the scammer</h4>
+              </div>
+              <div class="row row--tight">
+                <button class="btn btn--primary btn--sm" id="btn-demo-run" type="button">
+                  <svg aria-hidden="true"><use href="#i-play"></use></svg>
+                  <span data-i18n="t2_demo_run">Run demo</span>
+                </button>
+                <button class="btn btn--ghost btn--sm" id="btn-demo-stop" type="button" hidden>
+                  <svg aria-hidden="true"><use href="#i-x"></use></svg>
+                  <span data-i18n="btn_stop">Stop</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="wa-chat-frame demo-wa-frame" id="demo-wa-frame">
+              <div class="chat-head">
+                <div class="chat-head__id">
+                  <span class="chat-head__avatar"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+                  <span>
+                    <span class="chat-head__name" id="demo-chat-name" data-i18n="t2_demo_chat_name">Suspected scammer</span>
+                    <span class="chat-head__status">
+                      <span class="pulse-dot"></span>
+                      <span data-i18n="t2_demo_chat_status">online</span>
+                    </span>
+                  </span>
+                </div>
+                <span class="chip chip--red" data-i18n="t2_demo_chat_badge">Demo</span>
+              </div>
+              <div class="wa-chat-scroll" id="demo-chat-box" role="log" aria-label="Demo transcript" aria-live="polite">
+                <div class="wa-bubble-system" data-i18n="t2_demo_idle">Press Run demo to watch the AI string the scammer along and pull out their payment details.</div>
+              </div>
+            </div>
+
+            <div class="m2__demo-details" id="demo-details" hidden>
+              <span class="m2__demo-details-title" data-i18n="t2_demo_details_title">Details the system extracted from this conversation:</span>
+              <ul class="m2__demo-details-list" id="demo-details-list"></ul>
+            </div>
+          </div>
+        </div><!-- /demo tabpanel -->
+
       </div>
-
     </div>
-
-  </section>
+  </div>
 
   <!-- ============ TAB 3 · EVIDENCE & PDF ============ -->
   <section class="tab-content-pane" id="tab-proof" role="tabpanel" aria-labelledby="tab-btn-proof" tabindex="0">
@@ -1120,7 +1320,7 @@
 <!-- ==================== TOASTS ==================== -->
 <div class="toast-region" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="/js/i18n.js?v=20261007c"></script>
-  <script src="/js/app.js?v=20261007c"></script>
+  <script src="/js/i18n.js?v=20261007r"></script>
+  <script src="/js/app.js?v=20261007r"></script>
 </body>
 </html>
