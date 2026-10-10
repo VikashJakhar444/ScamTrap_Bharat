@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    ScamTrap Bharat — i18n (English / हिंदी)
    - Every visible string carries data-i18n; inputs get their placeholder set.
    - t(key) exposes the same table to app.js for dynamic strings.
@@ -25,6 +25,12 @@ const translations = {
     t2_hero_title: 'Trap the scammer <em>in their own web.</em>',
     t2_hero_lede: 'Let the AI decoy waste their time, string them along and extract critical details — payment IDs, bank accounts, mule numbers.',
     t2_hero_cta: 'Start the decoy',
+    t2_ledger_kicker: 'Autonomous Decoy & Counter-Intelligence Benchmarks',
+    t2_ledger_src: 'Local Persona & Honeypot Engine',
+    t2_kpi_1: 'Avg scammer time burned per decoy session',
+    t2_kpi_2: 'Zero citizen risk with synthetic persona',
+    t2_kpi_3: 'Mule accounts & payment handles extracted',
+    t2_kpi_4: 'Compliant cyber-complaint dossier ready',
     trust_1: 'Everything stays on your device',
     trust_2: 'Evidence is hashed and timestamped',
     trust_3: 'English & हिंदी interface',
@@ -492,6 +498,12 @@ const translations = {
     t2_hero_title: 'स्कैमर को फँसाएँ <em>उनके ही जाल में।</em>',
     t2_hero_lede: 'AI डिकॉय को उनका समय बर्बाद करने दें, उन्हें उलझाए रखें और अहम जानकारी निकालें — पेमेंट ID, बैंक खाते, म्यूल नंबर।',
     t2_hero_cta: 'डिकॉय शुरू करें',
+    t2_ledger_kicker: 'स्वायत्त डिकॉय और जवाबी कार्रवाई मैट्रिक्स',
+    t2_ledger_src: 'लोकल पर्सोना और हनीपॉट इंजन',
+    t2_kpi_1: 'प्रति डिकॉय सत्र स्कैमर का बर्बाद हुआ औसत समय',
+    t2_kpi_2: 'सिंथेटिक पहचान से नागरिक को शून्य जोखिम',
+    t2_kpi_3: 'निकाले गए म्यूल बैंक खाते व पेमेंट हैंडल',
+    t2_kpi_4: 'तैयार साइबर शिकायत PDF डोसियर',
     trust_1: 'सब कुछ आपके डिवाइस पर रहता है',
     trust_2: 'सबूत हैश और समय सहित होता है',
     trust_3: 'अंग्रेज़ी व हिंदी इंटरफ़ेस',

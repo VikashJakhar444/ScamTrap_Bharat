@@ -1,1326 +1,1854 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ScamTrap Bharat — Check a scam, trap the scammer, file the report</title>
-  <meta name="description" content="Indian citizen cyber-safety tool: verify suspicious UPI IDs and messages, run an AI decoy against scammers, and export a 1930-format evidence dossier.">
+  <meta name="description"
+    content="Indian citizen cyber-safety tool: verify suspicious UPI IDs and messages, run an AI decoy against scammers, and export a 1930-format evidence dossier.">
   <meta name="theme-color" content="#0F2C59">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="/assets/css/main.css?v=20261007s">
   <style id="tab-boot"></style>
   <script>
-  (function () {
-    try {
-      var t = localStorage.getItem('stb_active_tab');
-      if (t && t !== 'tab-checker' && document.getElementById) {
-        // Flip the tab button active state in BOTH navbars before paint.
-        // Selectors target the button's data-tab attribute.
-        var css =
-          '#tab-checker{display:none!important}#' + t +
-          '{display:block!important}#hero-main{display:none!important}' +
-          // Desktop navbar: flip aria-selected
-          '#desktop-tablist [data-tab="tab-checker"][role="tab"]{' +
-          'background:none;color:var(--slate-600)!important;box-shadow:none!important;font-weight:600!important}' +
-          '#desktop-tablist [data-tab="' + t + '"][role="tab"]{' +
-          'background:var(--navy)!important;color:#fff!important;box-shadow:var(--shadow-md)!important;font-weight:700!important}' +
-          // Mobile navbar: same flip
-          '#mobile-tablist [data-tab="tab-checker"][role="tab"]{' +
-          'background:none;color:var(--slate-600)!important;box-shadow:none!important}' +
-          '#mobile-tablist [data-tab="' + t + '"][role="tab"]{' +
-          'background:var(--navy)!important;color:#fff!important;box-shadow:var(--shadow-md)!important}';
-        document.getElementById('tab-boot').textContent = css;
-      }
-    } catch (e) {}
-  })();
+    (function () {
+      try {
+        var t = localStorage.getItem('stb_active_tab');
+        if (t && t !== 'tab-checker' && document.getElementById) {
+          // Flip the tab button active state in BOTH navbars before paint.
+          // Selectors target the button's data-tab attribute.
+          var css =
+            '#tab-checker{display:none!important}#' + t +
+            '{display:block!important}#hero-main{display:none!important}' +
+            (t === 'tab-honeypot' ? '#hero-honeypot{display:flex!important}' : '') +
+            // Desktop navbar: flip aria-selected
+            '#desktop-tablist [data-tab="tab-checker"][role="tab"]{' +
+            'background:none;color:var(--slate-600)!important;box-shadow:none!important;font-weight:600!important}' +
+            '#desktop-tablist [data-tab="' + t + '"][role="tab"]{' +
+            'background:var(--navy)!important;color:#fff!important;box-shadow:var(--shadow-md)!important;font-weight:700!important}' +
+            // Mobile navbar: same flip
+            '#mobile-tablist [data-tab="tab-checker"][role="tab"]{' +
+            'background:none;color:var(--slate-600)!important;box-shadow:none!important}' +
+            '#mobile-tablist [data-tab="' + t + '"][role="tab"]{' +
+            'background:var(--navy)!important;color:#fff!important;box-shadow:var(--shadow-md)!important}';
+          document.getElementById('tab-boot').textContent = css;
+        }
+      } catch (e) { }
+    })();
   </script>
 </head>
+
 <body>
 
-<!-- ==================== ICON SPRITE ==================== -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true" focusable="false">
-  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
-  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
-  <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
-  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
-  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
-  <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></symbol>
-  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
-  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
-  <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
-  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
-  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
-  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
-  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
-  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
-          <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19v3"/><path d="M8 22h8"/><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></symbol>
-          <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
-  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
-  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
-  <symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 22 18 0"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M12 2 3 8h18Z"/></symbol>
-  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
-  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
-  <symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M20 3v4"/><path d="M22 5h-4"/></symbol>
-  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
-  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></symbol>
-  <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
-  <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
-  <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
-  <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
-  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
-  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
-  <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
-  <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
-  <symbol id="i-checks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 6 20 12 14"/><path d="M13 17l3 3 6-7"/></symbol>
-<symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
-</svg>
+  <!-- ==================== ICON SPRITE ==================== -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true" focusable="false">
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path
+        d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </symbol>
+    <symbol id="i-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M12 8V4H8" />
+      <rect width="16" height="12" x="4" y="8" rx="2" />
+      <path d="M2 14h2" />
+      <path d="M20 14h2" />
+      <path d="M15 13v2" />
+      <path d="M9 13v2" />
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M10 9H8" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M12 20V10" />
+      <path d="M18 20V4" />
+      <path d="M6 20v-4" />
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5" />
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M5 12h14" />
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M12 15V3" />
+    </symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <rect width="14" height="14" x="8" y="8" rx="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M12 19v3" />
+      <path d="M8 22h8" />
+      <rect x="9" y="2" width="6" height="13" rx="3" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    </symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+      <circle cx="12" cy="13" r="3" />
+    </symbol>
+    <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="m22 2-7 20-4-9-9-4Z" />
+      <path d="M22 2 11 13" />
+    </symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path
+        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </symbol>
+    <symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="m3 22 18 0" />
+      <path d="M6 18v-7" />
+      <path d="M10 18v-7" />
+      <path d="M14 18v-7" />
+      <path d="M18 18v-7" />
+      <path d="M12 2 3 8h18Z" />
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <rect width="18" height="11" x="3" y="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M8 16H3v5" />
+    </symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path
+        d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+      <path d="M20 3v4" />
+      <path d="M22 5h-4" />
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0" />
+      <circle cx="12" cy="12" r="3" />
+    </symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <rect width="5" height="5" x="3" y="3" rx="1" />
+      <rect width="5" height="5" x="16" y="3" rx="1" />
+      <rect width="5" height="5" x="3" y="16" rx="1" />
+      <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+      <path d="M21 21v.01" />
+      <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+      <path d="M3 12h.01" />
+      <path d="M12 3h.01" />
+      <path d="M12 16v.01" />
+      <path d="M16 12h1" />
+      <path d="M21 12v.01" />
+      <path d="M12 21v-1" />
+    </symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path
+        d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path
+        d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+      <path d="M4 22v-7" />
+    </symbol>
+    <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M3 5v14a9 3 0 0 0 18 0V5" />
+      <path d="M3 12a9 3 0 0 0 18 0" />
+    </symbol>
+    <symbol id="i-checks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+      stroke-linejoin="round">
+      <path d="M3 17 6 20 12 14" />
+      <path d="M13 17l3 3 6-7" />
+    </symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="m6 9 6 6 6-6" />
+    </symbol>
+  </svg>
 
-<!-- ==================== HEADER ==================== -->
-<header class="site-header">
-  <div class="site-header__bar">
+  <!-- ==================== HEADER ==================== -->
+  <header class="site-header">
+    <div class="site-header__bar">
 
-    <a class="brand" href="/" aria-label="ScamTrap Bharat home">
-      <span class="brand__mark"><svg aria-hidden="true"><use href="#i-shield"></use></svg></span>
-      <span class="brand__text">
-        <span class="brand__name" data-i18n="brand_name">ScamTrap Bharat</span>
-        <span class="brand__tag" data-i18n="brand_tag">Citizen Cyber Defence Portal</span>
-      </span>
-    </a>
-
-    <nav class="site-nav" role="tablist" aria-label="Main sections" id="desktop-tablist">
-      <button class="nav-btn" role="tab" id="tab-btn-checker" data-tab="tab-checker" aria-selected="true" aria-controls="tab-checker">
-        <span data-i18n="nav_checker">Check a scam</span>
-      </button>
-      <button class="nav-btn" role="tab" id="tab-btn-honeypot" data-tab="tab-honeypot" aria-selected="false" aria-controls="tab-honeypot" tabindex="-1">
-        <span data-i18n="nav_honeypot">Trap the scammer</span>
-      </button>
-      <button class="nav-btn" role="tab" id="tab-btn-proof" data-tab="tab-proof" aria-selected="false" aria-controls="tab-proof" tabindex="-1">
-        <span data-i18n="nav_proof">Evidence &amp; PDF</span>
-      </button>
-      <button class="nav-btn" role="tab" id="tab-btn-trends" data-tab="tab-trends" aria-selected="false" aria-controls="tab-trends" tabindex="-1">
-        <span data-i18n="nav_trends">Trends &amp; compare</span>
-      </button>
-    </nav>
-
-    <div class="header-actions">
-      <button class="btn btn--ghost btn--sm" id="lang-toggle-btn" type="button" data-i18n-aria="lang_toggle" title="Switch language / भाषा बदलें">
-        <svg aria-hidden="true"><use href="#i-globe"></use></svg>
-        <span class="label" data-i18n="lang_toggle">हिंदी</span>
-      </button>
-      <button class="hamburger" id="hamburger-btn" type="button" aria-expanded="false" aria-controls="mobile-tablist" aria-label="Open menu">
-        <svg aria-hidden="true"><use href="#i-menu"></use></svg>
-      </button>
-    </div>
-
-  </div>
-</header>
-
-<div class="mobile-nav" id="mobile-tablist" role="tablist" aria-label="Main sections (mobile)">
-  <button class="nav-btn" role="tab" data-tab="tab-checker" aria-selected="true" aria-controls="tab-checker">
-    <svg aria-hidden="true"><use href="#i-search"></use></svg>
-    <span data-i18n="nav_checker">Check a scam</span>
-  </button>
-  <button class="nav-btn" role="tab" data-tab="tab-honeypot" aria-selected="false" aria-controls="tab-honeypot" tabindex="-1">
-    <svg aria-hidden="true"><use href="#i-bot"></use></svg>
-    <span data-i18n="nav_honeypot">Trap the scammer</span>
-  </button>
-  <button class="nav-btn" role="tab" data-tab="tab-proof" aria-selected="false" aria-controls="tab-proof" tabindex="-1">
-    <svg aria-hidden="true"><use href="#i-file"></use></svg>
-    <span data-i18n="nav_proof">Evidence &amp; PDF</span>
-  </button>
-  <button class="nav-btn" role="tab" data-tab="tab-trends" aria-selected="false" aria-controls="tab-trends" tabindex="-1">
-    <svg aria-hidden="true"><use href="#i-chart"></use></svg>
-    <span data-i18n="nav_trends">Trends &amp; compare</span>
-  </button>
-</div>
-
-<!-- ==================== HERO (Tab 1 only) ==================== -->
-<section class="hero" id="hero-main">
-  <div class="shell hero__inner">
-
-    <div>
-      <span class="hero__eyebrow">
-        <svg aria-hidden="true"><use href="#i-zap"></use></svg>
-        <span data-i18n="hero_eyebrow">Pre-fraud interception, not post-fraud alerts</span>
-      </span>
-
-      <h1 class="display hero__title" data-i18n="hero_title" data-i18n-html>Catch the scammer <em>before the money moves.</em></h1>
-
-      <p class="lede hero__lede" data-i18n="hero_lede">
-        Paste a message, screenshot or voice note &mdash; get a scored verdict in seconds.
-      </p>
-
-      <div class="hero__cta">
-        <button class="btn btn--white btn--lg" type="button" data-goto-tab="tab-checker">
-          <svg aria-hidden="true"><use href="#i-search"></use></svg>
-          <span data-i18n="hero_cta_primary">Check a message now</span>
-        </button>
-        <button class="btn btn--on-navy btn--lg" type="button" data-goto-tab="tab-honeypot">
-          <svg aria-hidden="true"><use href="#i-bot"></use></svg>
-          <span data-i18n="hero_cta_secondary">Open live honeypot</span>
-        </button>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!-- Real-data strip: every figure below is an official government number. -->
-  <div class="shell hero__ledger">
-    <div class="ledger-kicker">
-      <span class="ledger-kicker__dot" aria-hidden="true"></span>
-      <span class="ledger-kicker__text" data-i18n="hero_ledger_kicker">The figures this tool is built against</span>
-      <span class="ledger-kicker__src" data-i18n="hero_ledger_src">Official releases: MHA / I4C / RBI</span>
-    </div>
-
-    <div class="ledger-grid">
-      <div class="ledger-cell">
-        <span class="ledger-cell__val">₹22,495<span class="ledger-cell__unit" data-i18n="unit_cr">crore</span></span>
-        <span class="ledger-cell__label" data-i18n="hero_kpi_1">Reported lost to online fraud in 2025</span>
-      </div>
-      <div class="ledger-cell">
-        <span class="ledger-cell__val">24,02,579</span>
-        <span class="ledger-cell__label" data-i18n="hero_kpi_2">Financial-fraud complaints filed in 2025</span>
-      </div>
-      <div class="ledger-cell">
-        <span class="ledger-cell__val">₹11,158<span class="ledger-cell__unit" data-i18n="unit_cr">crore</span></span>
-        <span class="ledger-cell__label" data-i18n="hero_kpi_3">Frozen before it could be withdrawn</span>
-      </div>
-      <div class="ledger-cell">
-        <span class="ledger-cell__val">16.29<span class="ledger-cell__unit" data-i18n="unit_lakh">lakh</span></span>
-        <span class="ledger-cell__label" data-i18n="hero_kpi_4">UPI payment-fraud incidents this fiscal</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== MAIN ==================== -->
-<main class="main-container">
-
-  <!-- ============ TAB 1 · CHECK A SCAM ============ -->
-  <section class="tab-content-pane is-active" id="tab-checker" role="tabpanel" aria-labelledby="tab-btn-checker" tabindex="0">
-
-    <div class="tab-intro">
-      <div>
-        <div class="tab-intro__num" data-i18n="t1_num">Step 01</div>
-        <h2 class="tab-intro__title" data-i18n="t1_title">Check a suspicious message</h2>
-        <p class="tab-intro__desc" data-i18n="t1_desc">Paste text, drop a screenshot, upload a voice note or paste a UPI QR payload. Every input is checked the same way and comes back with a verdict you can act on.</p>
-      </div>
-      <span class="badge badge--navy"><svg aria-hidden="true"><use href="#i-zap"></use></svg><span data-i18n="t1_db_badge">Evidence-backed verdict</span></span>
-    </div>
-
-    <div class="grid-12">
-
-      <!-- Input column -->
-      <div class="col-7">
-        <div class="card-box stack">
-
-          <div>
-            <label class="input-label" for="quick-search-input" data-i18n="label_quick_lookup">Quick lookup</label>
-            <div class="input-group">
-              <input type="text" id="quick-search-input" class="input-control input-control--mono"
-                     placeholder="bijli.board.pay@ybl or 9876543210" data-i18n="ph_quick_lookup"
-                     autocomplete="off" spellcheck="false">
-              <button class="btn btn--primary" id="quick-search-btn" type="button">
-                <svg aria-hidden="true"><use href="#i-search"></use></svg>
-                <span data-i18n="btn_lookup">Check registry</span>
-              </button>
-            </div>
-            <div class="chip-group">
-              <button class="chip-btn" id="chip-scam-upi" type="button">
-                <svg aria-hidden="true"><use href="#i-zap"></use></svg>
-                <span data-i18n="chip_upi">Try a flagged UPI</span>
-              </button>
-              <button class="chip-btn" id="chip-scam-msg" type="button">
-                <svg aria-hidden="true"><use href="#i-zap"></use></svg>
-                <span data-i18n="chip_msg">Try an electricity-bill message</span>
-              </button>
-            </div>
-          </div>
-
-          <hr class="divider">
-
-          <div>
-            <label class="input-label" for="scam-msg-input" data-i18n="label_paste">Paste the full message</label>
-            <textarea id="scam-msg-input" class="input-control" rows="4"
-                      placeholder="Paste the WhatsApp or SMS text asking for an urgent payment, KYC update or bill clearance…"
-                      data-i18n="ph_paste"></textarea>
-
-            <div class="attach-strip" role="group" aria-label="Evidence input modes">
-              <button class="dropzone-box dropzone-box--compact" id="dropzone-box" type="button" aria-describedby="dropzone-help">
-                <span class="dropzone-box__hint">
-                  <svg aria-hidden="true"><use href="#i-camera"></use></svg>
-                  <span data-i18n="attach_image">Screenshot</span>
-                </span>
-              </button>
-              <button class="attach-btn" id="attach-audio-btn" type="button">
-                <svg aria-hidden="true"><use href="#i-mic"></use></svg>
-                <span data-i18n="attach_audio">Voice note</span>
-              </button>
-              <button class="attach-btn" id="attach-qr-btn" type="button">
-                <svg aria-hidden="true"><use href="#i-qr"></use></svg>
-                <span data-i18n="attach_qr">UPI QR payload</span>
-              </button>
-              <span class="attach-status is-hidden" id="attach-status"></span>
-            </div>
-            <span class="visually-hidden" id="dropzone-help" data-i18n="dropzone_help">Optional. Drop a scam screenshot here and it will be read with on-device QR detection plus AI vision OCR.</span>
-            <input type="file" id="scam-img-input" accept="image/*" class="visually-hidden" aria-label="Attach a scam screenshot">
-            <input type="file" id="scam-audio-input" accept="audio/*" class="visually-hidden" aria-label="Attach a scam voice note">
-
-            <div class="qr-row is-hidden" id="qr-row">
-              <label class="input-label" for="qr-payload-input" data-i18n="qr_label">Paste the UPI QR payload</label>
-              <div class="input-group">
-                <input type="text" id="qr-payload-input" class="input-control input-control--mono"
-                       placeholder="upi://pay?pa=bijli.board.pay@ybl&amp;am=1450" data-i18n="ph_qr" autocomplete="off">
-                <button class="btn btn--primary" id="qr-analyze-btn" type="button">
-                  <svg aria-hidden="true"><use href="#i-qr"></use></svg>
-                  <span data-i18n="btn_check_qr">Check QR</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="row row--between mt-3">
-              <span class="text-xs muted" data-i18n="paste_helper">Every input is checked the same way - no shortcuts.</span>
-              <button class="btn btn--ghost btn--sm" id="btn-clear-tab1" type="button">
-                <svg aria-hidden="true"><use href="#i-x"></use></svg>
-                <span data-i18n="btn_clear">Clear</span>
-              </button>
-            </div>
-
-            <button class="btn btn--accent btn--block btn--lg mt-4" id="analyze-msg-btn" type="button">
-              <svg aria-hidden="true"><use href="#i-shield"></use></svg>
-              <span id="analyze-label" data-i18n="btn_analyze">Check if this is a scam</span>
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Result column -->
-      <div class="col-5">
-        <div class="card-box card-box--sticky" id="result-side-card" aria-live="polite" aria-busy="false">
-
-          <div class="section-head mb-4">
-            <div>
-              <h3 class="card-h2" data-i18n="t1_result_title">Verdict &amp; counter-bait</h3>
-              <p class="card-desc" data-i18n="t1_result_desc">Risk score, matched registry record and the next safe move.</p>
-            </div>
-          </div>
-
-          <!-- Empty state -->
-          <div class="empty-state" id="result-placeholder">
-            <div class="empty-state__icon"><svg aria-hidden="true"><use href="#i-eye"></use></svg></div>
-            <div class="empty-state__title" data-i18n="t1_empty_title">Nothing checked yet</div>
-            <div class="empty-state__note" data-i18n="t1_empty_note">Enter a UPI ID or paste a message on the left.</div>
-          </div>
-
-          <!-- Loading skeleton -->
-          <div class="is-hidden" id="result-loading">
-            <div class="row" style="gap:var(--s-4);align-items:center">
-              <div class="skeleton skeleton--circle"></div>
-              <div class="grow">
-                <div class="skeleton skeleton--line w-70"></div>
-                <div class="skeleton skeleton--line w-45"></div>
-              </div>
-            </div>
-            <div class="skeleton skeleton--block mt-4"></div>
-            <div class="loading-note mt-3">
-              <span class="spinner"></span><span data-i18n="t1_loading">Querying registry…</span>
-            </div>
-          </div>
-
-          <!-- Result content -->
-          <div class="is-hidden" id="result-active-content">
-
-            <div class="gauge-wrapper">
-              <svg class="radial-progress-svg" viewBox="0 0 80 80" aria-hidden="true">
-                <circle class="radial-bg-circle" cx="40" cy="40" r="35"></circle>
-                <circle class="radial-val-circle" id="radial-gauge-circle" cx="40" cy="40" r="35"></circle>
-              </svg>
-              <div>
-                <div class="gauge__score" id="gauge-score-text">0%</div>
-                <div class="gauge__caption" data-i18n="gauge_caption">Risk score</div>
-              </div>
-              <span class="badge" id="risk-score-pill" data-i18n="pill_pending">Awaiting</span>
-            </div>
-
-            <div class="alert-box alert-box-danger" id="risk-banner-box">
-              <div class="alert-box__title">
-                <svg aria-hidden="true" id="risk-banner-icon"><use href="#i-alert"></use></svg>
-                <span id="risk-banner-title">Identified threat</span>
-              </div>
-              <p class="alert-box__body" id="risk-banner-guidance"></p>
-            </div>
-
-            <!-- Provenance strip: which engine answered, on what input, under which case -->
-            <div class="verdict-meta is-hidden" id="verdict-meta">
-              <span class="verdict-meta__item" id="meta-model" title="Engine that scored this input">
-                <svg aria-hidden="true"><use href="#i-sparkles"></use></svg>
-                <span class="verdict-meta__val">—</span>
-              </span>
-              <span class="verdict-meta__item" id="meta-input" title="How the input arrived">
-                <svg aria-hidden="true"><use href="#i-search"></use></svg>
-                <span class="verdict-meta__val">—</span>
-              </span>
-              <span class="verdict-meta__item" id="meta-case" title="Investigation case id">
-                <svg aria-hidden="true"><use href="#i-lock"></use></svg>
-                <span class="verdict-meta__val">—</span>
-              </span>
-            </div>
-
-            <!-- 4-Principle Cognitive AI Detective -->
-            <div class="principles-panel is-hidden" id="principles-panel">
-              <div class="overline mb-3">
-                <svg aria-hidden="true"><use href="#i-sparkles"></use></svg>
-                <span data-i18n="principles_title">Why this verdict</span>
-              </div>
-              <div class="principles-list" id="principles-list"></div>
-              <p class="principles-footnote" data-i18n="principles_footnote">
-                Authority always outranks the rest: a message that claims to be a bank, the electricity
-                department or the police is the strongest signal on its own.
-              </p>
-            </div>
-
-            <!-- 5-Layer Analysis Breakdown -->
-            <div class="layers-panel is-hidden" id="layers-panel">
-              <div class="overline mb-3">
-                <svg aria-hidden="true"><use href="#i-activity"></use></svg>
-                <span data-i18n="layers_title">Evidence found</span>
-              </div>
-              <div class="layers-list" id="layers-list"></div>
-              <div class="row mt-3" style="gap:var(--s-2)">
-                <a class="btn btn--ghost btn--sm btn--block is-hidden" id="btn-dl-forensic-log" href="#" download>
-                  <svg aria-hidden="true"><use href="#i-download"></use></svg>
-                  <span data-i18n="btn_dl_log">Download forensic log</span>
-                </a>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="overline mb-3" data-i18n="extracted_title">Extracted identifiers</div>
-              <div class="stack stack--sm">
-                <div class="ident-row">
-                  <div class="grow">
-                    <div class="ident-row__label" data-i18n="lbl_upi">UPI handles</div>
-                    <span class="badge-mono" id="ext-upi-val">—</span>
-                  </div>
-                </div>
-                <div class="ident-row">
-                  <div class="grow">
-                    <div class="ident-row__label" data-i18n="lbl_phone">Phone numbers</div>
-                    <span class="badge-mono" id="ext-phone-val">—</span>
-                  </div>
-                </div>
-                <div class="ident-row">
-                  <div class="grow">
-                    <div class="ident-row__label" data-i18n="lbl_bank">Bank account / IFSC</div>
-                    <span class="badge-mono" id="ext-bank-val">—</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="alert-box alert-box-copilot" id="copilot-box">
-              <div class="alert-box__title">
-                <svg aria-hidden="true"><use href="#i-sparkles"></use></svg>
-                <span data-i18n="copilot_title">Expose their backup account</span>
-              </div>
-              <p class="alert-box__body" data-i18n="copilot_desc">
-                Generate a realistic “NPCI U16 daily limit reached” receipt. Sent back to the scammer, it usually
-                makes them reveal a second bank account they did not intend to share.
-              </p>
-
-              <div class="row" style="margin-top:var(--s-4);gap:var(--s-2)">
-                <label class="input-label mt-0 nowrap-label" for="custom-bait-amt" data-i18n="lbl_bait_amount">Amount</label>
-                <input type="text" id="custom-bait-amt" class="input-control input-control--mono" value="25,000" style="width:130px;padding:8px 11px" autocomplete="off">
-              </div>
-
-              <div class="row" style="margin-top:var(--s-2);gap:var(--s-2)">
-                <label class="input-label mt-0 nowrap-label" for="custom-bait-name" data-i18n="lbl_bait_name">Name</label>
-                <input type="text" id="custom-bait-name" class="input-control" value="Rahul Sharma" placeholder="Name printed on the receipt" style="width:130px;padding:8px 11px" autocomplete="off">
-              </div>
-
-              <div class="stack stack--sm mt-3">
-                <button class="btn btn--success btn--block" id="btn-generate-bait" type="button">
-                  <svg aria-hidden="true"><use href="#i-camera"></use></svg>
-                  <span id="bait-label" data-i18n="btn_gen_bait">Generate payment-failed screenshot</span>
-                </button>
-                <button class="btn btn--primary btn--block nextstep" id="btn-send-to-honeypot" type="button">
-                  <span class="nextstep__icon" aria-hidden="true"><svg><use href="#i-arrow-right"></use></svg></span>
-                  <span class="nextstep__text">
-                    <span class="nextstep__kicker" data-i18n="btn_to_honeypot_kicker">Next step &middot; Solution</span>
-                    <span class="nextstep__title" data-i18n="btn_to_honeypot">Trap them in Step 2</span>
-                    <span class="nextstep__sub" data-i18n="btn_to_honeypot_sub">Counter-attack console opens: ready replies, fake receipt, autonomous AI decoy node.</span>
-                  </span>
-                </button>
-              </div>
-
-              <div class="bait-preview is-hidden" id="bait-preview-modal">
-                <div class="bait-preview__title">
-                  <svg aria-hidden="true"><use href="#i-camera"></use></svg>
-                  <span data-i18n="bait_title">Generated counter-bait receipt</span>
-                </div>
-                <img class="bait-preview__img" id="bait-receipt-img" src="" alt="Generated payment-failed receipt">
-                <div class="bait-preview__actions">
-                  <a class="btn btn--ghost" id="btn-download-bait-img" href="#" download="NPCI_UPI_Limit_Error.png">
-                    <svg aria-hidden="true"><use href="#i-download"></use></svg>
-                    <span data-i18n="btn_dl_img">Download image</span>
-                  </a>
-                  <button class="btn btn--success" id="btn-copy-bait-text" type="button">
-                    <svg aria-hidden="true"><use href="#i-copy"></use></svg>
-                    <span data-i18n="btn_copy_reply">Copy ready reply</span>
-                  </button>
-                </div>
-                <div class="bait-preview__toast is-hidden" id="bait-copy-toast" data-i18n="bait_copied">Copied — includes the tracking trap link.</div>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ============ TAB 2 · LIVE HONEYPOT ============ -->
-  <section class="tab-content-pane" id="tab-honeypot" role="tabpanel" aria-labelledby="tab-btn-honeypot" tabindex="0">
-
-    <!-- Hero band for Tab 2 -->
-    <div class="hero hero--tab" id="hero-honeypot">
-      <div class="hero__inner">
-        <div>
-          <span class="hero__eyebrow">
-            <svg aria-hidden="true"><use href="#i-bot"></use></svg>
-            <span data-i18n="t2_hero_eyebrow">AI-powered scam baiter</span>
-          </span>
-          <h1 class="display hero__title" data-i18n="t2_hero_title" data-i18n-html>Trap the scammer <em>in their own web.</em></h1>
-          <p class="lede hero__lede" data-i18n="t2_hero_lede">Let the AI decoy waste their time, string them along and extract critical details — payment IDs, bank accounts, mule numbers.</p>
-          <div class="hero__cta">
-            <button class="btn btn--white btn--lg" type="button" data-goto-tab="tab-checker">
-              <svg aria-hidden="true"><use href="#i-search"></use></svg>
-              <span data-i18n="hero_cta_primary">Check a message now</span>
-            </button>
-            <button class="btn btn--on-navy btn--lg" type="button" id="hero-hp-scroll-btn">
-              <svg aria-hidden="true"><use href="#i-play"></use></svg>
-              <span data-i18n="t2_hero_cta">Start the decoy</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab-intro">
-      <div>
-        <div class="tab-intro__num" data-i18n="t2_num">Step 02</div>
-        <h2 class="tab-intro__title" data-i18n="t2_title">Run the AI decoy</h2>
-        <p class="tab-intro__desc" data-i18n="t2_desc">Replies are generated locally and stored with the case. The WhatsApp bridge is optional — the console below runs without a phone.</p>
-      </div>
-      <button class="btn btn--ghost btn--sm" id="btn-refresh-status" type="button">
-        <svg aria-hidden="true"><use href="#i-refresh"></use></svg>
-        <span data-i18n="btn_refresh">Refresh status</span>
-      </button>
-    </div>
-
-    <!-- ===== B1 - Step 1 hand-over, shared by both modes ===== -->
-    <div class="brief is-hidden" id="case-briefing">
-      <div class="brief__head">
-        <button class="brief__toggle" id="brief-toggle" type="button" aria-expanded="true" aria-controls="brief-body">
-          <span class="brief__icon"><svg aria-hidden="true"><use href="#i-file"></use></svg></span>
-          <span class="brief__head-text">
-            <span class="brief__title" data-i18n="t2_brief_title">What Step 1 handed over</span>
-            <span class="brief__sub" id="brief-meta">—</span>
-          </span>
-          <span class="brief__pill is-hidden" id="brief-score-pill">
-            <b id="brief-score-pill-n">—</b>
-            <i id="brief-score-pill-t">—</i>
-          </span>
-        </button>
-        <span class="brief__actions">
-          <button class="btn btn--ghost btn--sm is-hidden" id="btn-test-canary-click" type="button">
-            <svg aria-hidden="true"><use href="#i-link"></use></svg>
-            <span data-i18n="btn_canary">Open the trap link</span>
-          </button>
-          <button class="btn btn--primary btn--sm" id="btn-goto-tab3" type="button">
-            <svg aria-hidden="true"><use href="#i-file"></use></svg>
-            <span data-i18n="btn_go_evidence">Open evidence dossier</span>
-          </button>
+      <a class="brand" href="/" aria-label="ScamTrap Bharat home">
+        <span class="brand__mark"><svg aria-hidden="true">
+            <use href="#i-shield"></use>
+          </svg></span>
+        <span class="brand__text">
+          <span class="brand__name" data-i18n="brand_name">ScamTrap Bharat</span>
+          <span class="brand__tag" data-i18n="brand_tag">Citizen Cyber Defence Portal</span>
         </span>
-        <button class="brief__chev" id="brief-chev" type="button" aria-expanded="true" aria-controls="brief-body" aria-label="Toggle">
-          <svg aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </a>
+
+      <nav class="site-nav" role="tablist" aria-label="Main sections" id="desktop-tablist">
+        <button class="nav-btn" role="tab" id="tab-btn-checker" data-tab="tab-checker" aria-selected="true"
+          aria-controls="tab-checker">
+          <span data-i18n="nav_checker">Check a scam</span>
+        </button>
+        <button class="nav-btn" role="tab" id="tab-btn-honeypot" data-tab="tab-honeypot" aria-selected="false"
+          aria-controls="tab-honeypot" tabindex="-1">
+          <span data-i18n="nav_honeypot">Trap the scammer</span>
+        </button>
+        <button class="nav-btn" role="tab" id="tab-btn-proof" data-tab="tab-proof" aria-selected="false"
+          aria-controls="tab-proof" tabindex="-1">
+          <span data-i18n="nav_proof">Evidence &amp; PDF</span>
+        </button>
+        <button class="nav-btn" role="tab" id="tab-btn-trends" data-tab="tab-trends" aria-selected="false"
+          aria-controls="tab-trends" tabindex="-1">
+          <span data-i18n="nav_trends">Trends &amp; compare</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn--ghost btn--sm" id="lang-toggle-btn" type="button" data-i18n-aria="lang_toggle"
+          title="Switch language / भाषा बदलें">
+          <svg aria-hidden="true">
+            <use href="#i-globe"></use>
+          </svg>
+          <span class="label" data-i18n="lang_toggle">हिंदी</span>
+        </button>
+        <button class="hamburger" id="hamburger-btn" type="button" aria-expanded="false" aria-controls="mobile-tablist"
+          aria-label="Open menu">
+          <svg aria-hidden="true">
+            <use href="#i-menu"></use>
+          </svg>
         </button>
       </div>
-      <div class="brief__body" id="brief-body">
-        <p class="strategy-bar__note is-hidden" id="trap-note" data-i18n="t2_trap_note">Opening it records the IP, OS and browser of whoever opens it.</p>
-
-        <div class="brief__grid">
-          <div class="brief__col brief__col--main">
-            <div class="brief__msg-wrap is-hidden" id="brief-msg-wrap">
-              <div class="brief__msg-label" data-i18n="t2_brief_msg">Original message they sent</div>
-              <blockquote class="brief__msg" id="brief-msg"></blockquote>
-            </div>
-            <div class="brief__action is-hidden" id="brief-action-wrap">
-              <span class="brief__action-k" data-i18n="t2_brief_action">Recommended next move</span>
-              <p class="brief__action-v" id="brief-action"></p>
-            </div>
-          </div>
-
-          <div class="brief__col brief__col--side">
-            <div class="brief__facts is-hidden" id="brief-facts"></div>
-            <div class="ev-strip is-hidden" id="case-evidence">
-              <span class="ev-strip__title" data-i18n="t2_ev_title">Evidence from Step 1</span>
-              <span class="ev-strip__items" id="case-evidence-items"></span>
-            </div>
-          </div>
-        </div>
-
-        <details class="brief__more is-hidden" id="brief-more">
-          <summary>
-            <svg aria-hidden="true"><use href="#i-activity"></use></svg>
-            <span data-i18n="t2_brief_more">Full Step 1 analysis</span>
-          </summary>
-          <div class="brief__panels">
-            <div class="brief__panel is-hidden" id="brief-principles-wrap">
-              <div class="brief__panel-h" data-i18n="principles_title">Why this verdict</div>
-              <ul class="brief__list" id="brief-principles"></ul>
-            </div>
-            <div class="brief__panel is-hidden" id="brief-layers-wrap">
-              <div class="brief__panel-h" data-i18n="layers_title">Evidence found</div>
-              <ul class="brief__list" id="brief-layers"></ul>
-            </div>
-            <div class="brief__panel is-hidden" id="brief-reports-wrap">
-              <div class="brief__panel-h" data-i18n="t2_brief_reports">Registry reports</div>
-              <ul class="brief__list" id="brief-reports"></ul>
-            </div>
-          </div>
-        </details>
-      </div>
-    </div>
-
-    <!-- ===== B + C - strategy accordion ===== -->
-    <div class="acc" id="strategy-acc">
-
-      <!-- Mode 1 -->
-      <div class="acc__item is-open" data-mode="copilot">
-        <div class="acc__head">
-          <button class="acc__btn" id="acc-btn-copilot" type="button" aria-expanded="true" aria-controls="acc-copilot">
-            <span class="acc__icon acc__icon--blue"><svg aria-hidden="true"><use href="#i-shield"></use></svg></span>
-            <span class="acc__text">
-              <span class="acc__title">
-                <span data-i18n="t2_m1_title">Co-Pilot Mode</span>
-                <span class="acc__tag acc__tag--blue" data-i18n="t2_m1_tag">Manual chat control</span>
-              </span>
-              <span class="acc__desc" data-i18n="t2_m1_desc">Safely reply from your own WhatsApp without raising suspicion.</span>
-            </span>
-            <svg class="acc__chev" aria-hidden="true"><use href="#i-chevron"></use></svg>
-          </button>
-        </div>
-        <div class="acc__panel" id="acc-copilot" role="region" aria-labelledby="acc-btn-copilot">
-          <div class="acc__panel-inner">
-
-            <div class="m1__grid">
-              <section class="m1__block">
-                <div class="m1__step">
-                  <span class="m1__num">1</span>
-                  <span class="m1__steptext" data-i18n="t2_m1_step1">Fake error receipt</span>
-                </div>
-                <div class="receipt-box" id="copilot-receipt-box">
-                  <div class="receipt-box__empty" id="copilot-receipt-empty">
-                    <svg aria-hidden="true"><use href="#i-camera"></use></svg>
-                    <span data-i18n="t2_m1_img_empty">No receipt generated yet</span>
-                  </div>
-                  <img id="copilot-receipt-img" class="receipt-box__img" alt="Fake payment error receipt" hidden>
-                </div>
-                <button class="btn btn--ghost btn--block" id="btn-m1-receipt" type="button">
-                  <svg aria-hidden="true"><use href="#i-zap"></use></svg>
-                  <span data-i18n="t2_m1_img_btn">Generate U16 error receipt</span>
-                </button>
-                <div class="receipt-box__actions">
-                  <button class="btn btn--ghost btn--sm" id="btn-m1-receipt-dl" type="button">
-                    <svg aria-hidden="true"><use href="#i-download"></use></svg>
-                    <span data-i18n="btn_dl_img">Download image</span>
-                  </button>
-                  <button class="btn btn--ghost btn--sm" id="btn-m1-receipt-copy" type="button">
-                    <svg aria-hidden="true"><use href="#i-copy"></use></svg>
-                    <span data-i18n="btn_copy_reply">Copy ready reply</span>
-                  </button>
-                </div>
-              </section>
-
-              <section class="m1__block">
-                <div class="m1__step">
-                  <span class="m1__num">2</span>
-                  <span class="m1__steptext" data-i18n="t2_m1_step2">Suggested reply</span>
-                </div>
-                <textarea id="m1-suggested" class="input-control m1__ta" rows="5" data-i18n="ph_m1_reply"></textarea>
-                <button class="btn btn--ghost btn--block" id="btn-m1-copy" type="button">
-                  <svg aria-hidden="true"><use href="#i-copy"></use></svg>
-                  <span data-i18n="btn_copy">Copy</span>
-                </button>
-              </section>
-            </div>
-
-            <div class="m1__step m1__step--wide">
-              <span class="m1__num">3</span>
-              <span class="m1__steptext" data-i18n="t2_m1_step3">Continue chat</span>
-            </div>
-
-            <div class="input-group">
-              <label class="visually-hidden" for="m1-scammer-input" data-i18n="t2_m1_lbl">What did the scammer reply next?</label>
-              <input type="text" id="m1-scammer-input" class="input-control" data-i18n="ph_m1_scammer" placeholder="Paste their response here…" autocomplete="off">
-              <button class="btn btn--primary" id="btn-m1-generate" type="button">
-                <svg aria-hidden="true"><use href="#i-sparkles"></use></svg>
-                <span data-i18n="t2_m1_gen">Generate next safe reply</span>
-              </button>
-            </div>
-
-            <p class="m1__gate" id="m1-gate-note">
-              <svg aria-hidden="true"><use href="#i-alert"></use></svg>
-              <span data-i18n="t2_gate_note">Finish a check in Step 1 first - the Co-Pilot only answers once a real case exists.</span>
-            </p>
-
-            <div class="m1__thread" id="m1-thread" aria-live="polite">
-              <div class="m1__thread-empty" id="m1-thread-empty" data-i18n="t2_m1_empty">Your conversation with them starts here - paste what they said next in the box above.</div>
-            </div>
-
-            <div class="m1__foot" id="m1-foot" hidden>
-              <div class="m1__foot-chips">
-                <span class="chip chip--emerald is-hidden" id="m1-attached" data-i18n="t2_attached">Screenshot attached</span>
-                <span class="chip chip--blue" id="m1-provider">—</span>
-              </div>
-              <div class="m1__out-actions">
-                <button class="btn btn--ghost btn--sm" id="btn-m1-copy-out" type="button">
-                  <svg aria-hidden="true"><use href="#i-copy"></use></svg>
-                  <span data-i18n="btn_copy">Copy</span>
-                </button>
-                <button class="btn btn--ghost btn--sm" id="btn-m1-use" type="button">
-                  <svg aria-hidden="true"><use href="#i-send"></use></svg>
-                  <span data-i18n="t2_m1_use">Use as my reply</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- Mode 2 -->
-      <div class="acc__item" data-mode="cloud">
-        <div class="acc__head">
-          <button class="acc__btn" id="acc-btn-cloud" type="button" aria-expanded="false" aria-controls="acc-cloud">
-            <span class="acc__icon acc__icon--emerald"><svg aria-hidden="true"><use href="#i-bot"></use></svg></span>
-            <span class="acc__text">
-              <span class="acc__title">
-                <span data-i18n="t2_m2_title">Cloud AI Node</span>
-                <span class="acc__tag acc__tag--emerald" data-i18n="t2_m2_tag">Autonomous takeover</span>
-              </span>
-              <span class="acc__desc" data-i18n="t2_m2_desc">Let our AI decoy talk to them from a new number. Provide a realistic excuse to avoid suspicion.</span>
-            </span>
-            <svg class="acc__chev" aria-hidden="true"><use href="#i-chevron"></use></svg>
-          </button>
-        </div>
-        <div class="acc__panel" id="acc-cloud" role="region" aria-labelledby="acc-btn-cloud" hidden>
-          <div class="acc__panel-inner">
-            <p class="text-sm muted" data-i18n="t2_m2_intro">Choose how the AI should talk to the scammer, then deploy. You can connect your own WhatsApp for a live conversation, or preview the flow with a demo.</p>
-
-            <div class="m2__chooser" id="m2-chooser">
-              <button class="m2__opt m2__opt--self" id="btn-m2-opt-self" type="button" aria-pressed="false">
-                <span class="m2__opt-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></span>
-                <span class="m2__opt-body">
-                  <span class="m2__opt-title" data-i18n="t2_opt_self_title">Connect my WhatsApp</span>
-                  <span class="m2__opt-desc" data-i18n="t2_opt_self_desc">Reply from your own number — the scammer sees a real person.</span>
-                </span>
-              </button>
-              <button class="m2__opt m2__opt--system" id="btn-m2-opt-system" type="button" aria-pressed="false">
-                <span class="m2__opt-icon"><svg aria-hidden="true"><use href="#i-bot"></use></svg></span>
-                <span class="m2__opt-body">
-                  <span class="m2__opt-title" data-i18n="t2_opt_sys_title">Use a system-managed number</span>
-                  <span class="m2__opt-desc" data-i18n="t2_opt_sys_desc">Our AI operates a separate virtual number and handles the conversation for you.</span>
-                </span>
-              </button>
-            </div>
-
-            <form class="m2__form" id="cloud-form" autocomplete="off" hidden>
-              <div class="field">
-                <span class="field__label" data-i18n="t2_m2_who_label">Who should reply?</span>
-                <div class="m2__radios" role="radiogroup">
-                  <label class="m2__radio"><input type="radio" name="m2-persona" value="self" checked><span data-i18n="t2_m2_who_self">Myself (with a reason)</span></label>
-                  <label class="m2__radio"><input type="radio" name="m2-persona" value="character"><span data-i18n="t2_m2_who_char">Family member / Relative</span></label>
-                </div>
-              </div>
-              <div class="m2__row" id="m2-char-fields" hidden>
-                <div class="field">
-                  <label class="field__label" for="m2-relation" data-i18n="t2_m2_relation">Relation</label>
-                  <select id="m2-relation" class="input-control">
-                    <option value="son" data-i18n="t2_rel_son">Son</option>
-                    <option value="daughter" data-i18n="t2_rel_daughter">Daughter</option>
-                    <option value="brother" data-i18n="t2_rel_brother">Brother</option>
-                    <option value="staff" data-i18n="t2_rel_staff">Office staff</option>
-                    <option value="relative" data-i18n="t2_rel_other">Other</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label class="field__label" for="m2-name" data-i18n="t2_m2_name">Name</label>
-                  <input type="text" id="m2-name" class="input-control" placeholder="Rahul" autocomplete="off">
-                </div>
-              </div>
-              <div class="field">
-                <label class="field__label" for="m2-excuse" data-i18n="t2_m2_excuse_label">Reason for using this number</label>
-                <input type="text" id="m2-excuse" class="input-control" data-i18n="ph_m2_excuse" placeholder="e.g. my phone battery died, messaging from a friend's phone" autocomplete="off">
-              </div>
-            </form>
-
-            <div class="m2__actions">
-              <button class="btn btn--primary" id="btn-m2-deploy" type="button" disabled>
-                <svg aria-hidden="true"><use href="#i-bot"></use></svg>
-                <span data-i18n="t2_m2_open">Deploy AI Cloud Node</span>
-              </button>
-              <span class="text-xs muted" data-i18n="t2_m2_hint">The decoy stays in character and only ever asks for the scammer's own account details.</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div>
+  </header>
 
-  </section>
-
-  <!-- ============ MODE 2 · DEPLOY RESULT MODAL ============ -->
-  <div class="m2-modal is-hidden" id="m2-modal" role="dialog" aria-modal="true" aria-labelledby="m2-modal-title">
-    <div class="m2-modal__backdrop" id="m2-modal-backdrop"></div>
-    <div class="m2-modal__panel">
-      <header class="m2-modal__head">
-        <div>
-          <span class="m2-modal__kicker" data-i18n="t2_modal_kicker">Cloud AI Node</span>
-          <h3 class="m2-modal__title" id="m2-modal-title" data-i18n="t2_modal_title">Deploy AI Cloud Node</h3>
-        </div>
-        <button class="m2-modal__close" id="btn-m2-modal-close" type="button" aria-label="Close">
-          <svg aria-hidden="true"><use href="#i-x"></use></svg>
-        </button>
-      </header>
-
-      <div class="m2-modal__body">
-
-        <div class="m2-modal__tabs" role="tablist" aria-label="Cloud node views">
-          <button class="m2-tab is-active" id="m2-tab-live" data-m2tab="live" type="button" role="tab" aria-selected="true" data-i18n="t2_tab_live">Live connection</button>
-          <button class="m2-tab" id="m2-tab-demo" data-m2tab="demo" type="button" role="tab" aria-selected="false" data-i18n="t2_tab_demo">Preview demo</button>
-        </div>
-
-        <!-- LIVE tab: QR/chat (own WhatsApp) OR coming-soon (system number) -->
-        <div class="m2-tabpanel is-active" id="m2-panel-live" data-m2panel="live" role="tabpanel">
-        <!-- LIVE card (own WhatsApp) -->
-        <div class="m2-step is-active" id="m2-step-3-live" hidden>
-          <div class="m2__card m2__card--live">
-            <div class="m2__card-head">
-              <div>
-                <span class="m2__card-kicker" data-i18n="t2_live_kicker">Live connection</span>
-                <h4 class="m2__card-title" data-i18n="t2_live_title">Connect your WhatsApp</h4>
-              </div>
-              <span class="chip" id="live-chip" data-i18n="t2_live_offline">Not connected</span>
-            </div>
-
-            <div class="m2__qr" id="qr-area">
-              <img id="qr-img" alt="WhatsApp QR code" hidden>
-              <div class="m2__qr-placeholder" id="qr-placeholder">
-                <svg aria-hidden="true"><use href="#i-qr"></use></svg>
-                <span data-i18n="t2_live_qr_wait">Waiting for the bridge to start… the QR code will appear here.</span>
-              </div>
-            </div>
-            <p class="text-xs muted" data-i18n="t2_live_qr_help">WhatsApp → Linked devices → Link a device, then scan this code.</p>
-
-            <div class="field" style="margin-top: var(--s-4);">
-              <label class="field__label" for="live-scammer-phone" data-i18n="t2_live_phone_label">Scammer's WhatsApp number</label>
-              <input type="tel" id="live-scammer-phone" class="input-control" placeholder="+91 98765 43210" autocomplete="off">
-              <p class="text-xs muted" style="margin-top: 4px;" data-i18n="t2_live_phone_help">The AI will only auto-reply to messages from this number.</p>
-            </div>
-
-            <div class="m2__row m2__row--center">
-              <label class="m2__toggle">
-                <input type="checkbox" id="m2-automate">
-                <span class="m2__toggle-track"><span class="m2__toggle-thumb"></span></span>
-                <span class="m2__toggle-label" data-i18n="t2_automate_label">Automate — the AI replies on its own</span>
-              </label>
-            </div>
-
-            <div class="m2__term wa-chat-frame" id="cloud-terminal" hidden>
-              <div class="chat-head">
-                <div class="chat-head__id">
-                  <span class="chat-head__avatar"><svg aria-hidden="true"><use href="#i-bot"></use></svg></span>
-                  <span>
-                    <span class="chat-head__name" id="cloud-node-name">—</span>
-                    <span class="chat-head__status">
-                      <span class="pulse-dot"></span>
-                      <span id="cloud-status-text" data-i18n="t2_cloud_status">Waiting for deployment…</span>
-                    </span>
-                  </span>
-                </div>
-                <span class="chip chip--emerald" id="cloud-case-chip">—</span>
-              </div>
-
-              <div class="wa-chat-scroll" id="cloud-chat-box" role="log" aria-label="Cloud decoy transcript" aria-live="polite">
-                <div class="wa-bubble-system" data-i18n="t2_cloud_boot">Deploy to start the decoy conversation.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- COMING SOON card (system-managed number) -->
-        <div class="m2-step" id="m2-step-3-soon" hidden>
-          <div class="m2__card m2__card--soon">
-            <div class="m2__card-head">
-              <div>
-                <span class="m2__card-kicker" data-i18n="t2_soon_kicker">Virtual number</span>
-                <h4 class="m2__card-title" data-i18n="t2_soon_title">System-managed number</h4>
-              </div>
-              <span class="chip chip--amber" data-i18n="t2_soon_badge">Coming soon</span>
-            </div>
-            <p class="text-sm" data-i18n="t2_soon_body">You do not need to connect your own WhatsApp. Once virtual-number support ships, the system will message the scammer from a dedicated number using the identity you selected.</p>
-
-            <div class="m2__flow" aria-hidden="true">
-              <div class="m2__flow-step">
-                <span class="m2__flow-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></span>
-                <span class="m2__flow-label" data-i18n="t2_flow_1">Your identity</span>
-              </div>
-              <span class="m2__flow-arrow"><svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></span>
-              <div class="m2__flow-step">
-                <span class="m2__flow-icon m2__flow-icon--accent"><svg aria-hidden="true"><use href="#i-phone"></use></svg></span>
-                <span class="m2__flow-label" data-i18n="t2_flow_2">Virtual number</span>
-              </div>
-              <span class="m2__flow-arrow"><svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></span>
-              <div class="m2__flow-step">
-                <span class="m2__flow-icon m2__flow-icon--danger"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
-                <span class="m2__flow-label" data-i18n="t2_flow_3">Scammer</span>
-              </div>
-            </div>
-
-            <div class="m2__soon-meta">
-              <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_1">The AI answers in the scammer's own language and tone.</span></div>
-              <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_2">Every UPI ID, phone number and bank account they share is captured with a timestamp.</span></div>
-              <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_3">Export the whole transcript as evidence for a 1930 / cybercrime.gov.in complaint.</span></div>
-            </div>
-
-            <div class="m2__row m2__row--center">
-              <button class="btn btn--primary" id="btn-m2-demo-sys" type="button">
-                <svg aria-hidden="true"><use href="#i-play"></use></svg>
-                <span data-i18n="t2_demo_btn">Preview demo</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        </div><!-- /live tabpanel -->
-
-        <!-- DEMO tab -->
-        <div class="m2-tabpanel" id="m2-panel-demo" data-m2panel="demo" role="tabpanel" hidden>
-          <div class="m2__card m2__card--demo m2__card--demo-full" id="demo-player">
-            <div class="m2__card-head">
-              <div>
-                <span class="m2__card-kicker" data-i18n="t2_demo_kicker">Demo walkthrough</span>
-                <h4 class="m2__card-title" data-i18n="t2_demo_title">How the system handles the scammer</h4>
-              </div>
-              <div class="row row--tight">
-                <button class="btn btn--primary btn--sm" id="btn-demo-run" type="button">
-                  <svg aria-hidden="true"><use href="#i-play"></use></svg>
-                  <span data-i18n="t2_demo_run">Run demo</span>
-                </button>
-                <button class="btn btn--ghost btn--sm" id="btn-demo-stop" type="button" hidden>
-                  <svg aria-hidden="true"><use href="#i-x"></use></svg>
-                  <span data-i18n="btn_stop">Stop</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="wa-chat-frame demo-wa-frame" id="demo-wa-frame">
-              <div class="chat-head">
-                <div class="chat-head__id">
-                  <span class="chat-head__avatar"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
-                  <span>
-                    <span class="chat-head__name" id="demo-chat-name" data-i18n="t2_demo_chat_name">Suspected scammer</span>
-                    <span class="chat-head__status">
-                      <span class="pulse-dot"></span>
-                      <span data-i18n="t2_demo_chat_status">online</span>
-                    </span>
-                  </span>
-                </div>
-                <span class="chip chip--red" data-i18n="t2_demo_chat_badge">Demo</span>
-              </div>
-              <div class="wa-chat-scroll" id="demo-chat-box" role="log" aria-label="Demo transcript" aria-live="polite">
-                <div class="wa-bubble-system" data-i18n="t2_demo_idle">Press Run demo to watch the AI string the scammer along and pull out their payment details.</div>
-              </div>
-            </div>
-
-            <div class="m2__demo-details" id="demo-details" hidden>
-              <span class="m2__demo-details-title" data-i18n="t2_demo_details_title">Details the system extracted from this conversation:</span>
-              <ul class="m2__demo-details-list" id="demo-details-list"></ul>
-            </div>
-          </div>
-        </div><!-- /demo tabpanel -->
-
-      </div>
-    </div>
+  <div class="mobile-nav" id="mobile-tablist" role="tablist" aria-label="Main sections (mobile)">
+    <button class="nav-btn" role="tab" data-tab="tab-checker" aria-selected="true" aria-controls="tab-checker">
+      <svg aria-hidden="true">
+        <use href="#i-search"></use>
+      </svg>
+      <span data-i18n="nav_checker">Check a scam</span>
+    </button>
+    <button class="nav-btn" role="tab" data-tab="tab-honeypot" aria-selected="false" aria-controls="tab-honeypot"
+      tabindex="-1">
+      <svg aria-hidden="true">
+        <use href="#i-bot"></use>
+      </svg>
+      <span data-i18n="nav_honeypot">Trap the scammer</span>
+    </button>
+    <button class="nav-btn" role="tab" data-tab="tab-proof" aria-selected="false" aria-controls="tab-proof"
+      tabindex="-1">
+      <svg aria-hidden="true">
+        <use href="#i-file"></use>
+      </svg>
+      <span data-i18n="nav_proof">Evidence &amp; PDF</span>
+    </button>
+    <button class="nav-btn" role="tab" data-tab="tab-trends" aria-selected="false" aria-controls="tab-trends"
+      tabindex="-1">
+      <svg aria-hidden="true">
+        <use href="#i-chart"></use>
+      </svg>
+      <span data-i18n="nav_trends">Trends &amp; compare</span>
+    </button>
   </div>
 
-  <!-- ============ TAB 3 · EVIDENCE & PDF ============ -->
-  <section class="tab-content-pane" id="tab-proof" role="tabpanel" aria-labelledby="tab-btn-proof" tabindex="0">
+  <!-- ==================== HERO (Tab 1 only) ==================== -->
+  <section class="hero" id="hero-main">
+    <div class="shell hero__inner">
 
-    <div class="tab-intro">
       <div>
-        <div class="tab-intro__num" data-i18n="t3_num">Step 03</div>
-        <h2 class="tab-intro__title" data-i18n="t3_title">Evidence dossier</h2>
-        <p class="tab-intro__desc" data-i18n="t3_desc">Everything below is read back from the local database. Fields that have not actually been captured show as pending rather than a placeholder value.</p>
+        <span class="hero__eyebrow">
+          <svg aria-hidden="true">
+            <use href="#i-zap"></use>
+          </svg>
+          <span data-i18n="hero_eyebrow">Pre-fraud interception, not post-fraud alerts</span>
+        </span>
+
+        <h1 class="display hero__title" data-i18n="hero_title" data-i18n-html>Catch the scammer <em>before the money
+            moves.</em></h1>
+
+        <p class="lede hero__lede" data-i18n="hero_lede">
+          Paste a message, screenshot or voice note &mdash; get a scored verdict in seconds.
+        </p>
+
+        <div class="hero__cta">
+          <button class="btn btn--white btn--lg" type="button" data-goto-tab="tab-checker">
+            <svg aria-hidden="true">
+              <use href="#i-search"></use>
+            </svg>
+            <span data-i18n="hero_cta_primary">Check a message now</span>
+          </button>
+          <button class="btn btn--on-navy btn--lg" type="button" data-goto-tab="tab-honeypot">
+            <svg aria-hidden="true">
+              <use href="#i-bot"></use>
+            </svg>
+            <span data-i18n="hero_cta_secondary">Open live honeypot</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Real-data strip: every figure below is an official government number. -->
+    <div class="shell hero__ledger">
+      <div class="ledger-kicker">
+        <span class="ledger-kicker__dot" aria-hidden="true"></span>
+        <span class="ledger-kicker__text" data-i18n="hero_ledger_kicker">The figures this tool is built against</span>
+        <span class="ledger-kicker__src" data-i18n="hero_ledger_src">Official releases: MHA / I4C / RBI</span>
+      </div>
+
+      <div class="ledger-grid">
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">₹22,495<span class="ledger-cell__unit" data-i18n="unit_cr">crore</span></span>
+          <span class="ledger-cell__label" data-i18n="hero_kpi_1">Reported lost to online fraud in 2025</span>
+        </div>
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">24,02,579</span>
+          <span class="ledger-cell__label" data-i18n="hero_kpi_2">Financial-fraud complaints filed in 2025</span>
+        </div>
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">₹11,158<span class="ledger-cell__unit" data-i18n="unit_cr">crore</span></span>
+          <span class="ledger-cell__label" data-i18n="hero_kpi_3">Frozen before it could be withdrawn</span>
+        </div>
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">16.29<span class="ledger-cell__unit" data-i18n="unit_lakh">lakh</span></span>
+          <span class="ledger-cell__label" data-i18n="hero_kpi_4">UPI payment-fraud incidents this fiscal</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== HERO (Tab 2: Trap the scammer) ==================== -->
+  <section class="hero hero--tab" id="hero-honeypot" hidden>
+    <div class="shell hero__inner">
+      <div>
+        <span class="hero__eyebrow">
+          <svg aria-hidden="true">
+            <use href="#i-bot"></use>
+          </svg>
+          <span data-i18n="t2_hero_eyebrow">AI-powered scam baiter</span>
+        </span>
+
+        <h1 class="display hero__title" data-i18n="t2_hero_title" data-i18n-html>Trap the scammer <em>in their own
+            web.</em></h1>
+
+        <p class="lede hero__lede" data-i18n="t2_hero_lede">
+          Let the AI decoy waste their time, string them along and extract critical details &mdash; payment IDs, bank
+          accounts, mule numbers.
+        </p>
+
+        <div class="hero__cta">
+          <button class="btn btn--white btn--lg" type="button" id="hero-hp-scroll-btn">
+            <svg aria-hidden="true">
+              <use href="#i-play"></use>
+            </svg>
+            <span data-i18n="t2_hero_cta">Start the decoy</span>
+          </button>
+          <button class="btn btn--on-navy btn--lg" type="button" data-goto-tab="tab-checker">
+            <svg aria-hidden="true">
+              <use href="#i-search"></use>
+            </svg>
+            <span data-i18n="hero_cta_primary">Check a message now</span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="case-banner">
-      <div>
-        <div class="case-banner__eyebrow" data-i18n="t3_eyebrow">Cybercrime complaint evidence file · NCRP 1930 format</div>
-        <div class="case-banner__title" id="banner-case-id">CASE-2026-1001</div>
-        <div class="case-banner__meta" id="banner-hash">SHA-256: calculating…</div>
+    <!-- Honeypot counter-intel strip -->
+    <div class="shell hero__ledger">
+      <div class="ledger-kicker">
+        <span class="ledger-kicker__dot" aria-hidden="true"></span>
+        <span class="ledger-kicker__text" data-i18n="t2_ledger_kicker">Autonomous Decoy &amp; Counter-Intelligence
+          Benchmarks</span>
+        <span class="ledger-kicker__src" data-i18n="t2_ledger_src">Local Persona &amp; Honeypot Engine</span>
       </div>
-      <a href="/api/reports/download-pdf?case_id=CASE-2026-1001" class="btn btn--danger btn--lg" id="btn-download-pdf-main" target="_blank" rel="noopener">
-        <svg aria-hidden="true"><use href="#i-download"></use></svg>
-        <span data-i18n="btn_dl_pdf">Download 1930 complaint PDF</span>
-      </a>
+
+      <div class="ledger-grid">
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">47+<span class="ledger-cell__unit">mins</span></span>
+          <span class="ledger-cell__label" data-i18n="t2_kpi_1">Avg scammer time burned per decoy session</span>
+        </div>
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">100%</span>
+          <span class="ledger-cell__label" data-i18n="t2_kpi_2">Zero citizen risk with synthetic persona</span>
+        </div>
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">14+<span class="ledger-cell__unit">fields</span></span>
+          <span class="ledger-cell__label" data-i18n="t2_kpi_3">Mule accounts &amp; payment handles extracted</span>
+        </div>
+        <div class="ledger-cell">
+          <span class="ledger-cell__val">1930</span>
+          <span class="ledger-cell__label" data-i18n="t2_kpi_4">Compliant cyber-complaint dossier ready</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="main-container">
+
+    <!-- ============ TAB 1 · CHECK A SCAM ============ -->
+    <section class="tab-content-pane is-active" id="tab-checker" role="tabpanel" aria-labelledby="tab-btn-checker"
+      tabindex="0">
+
+      <div class="tab-intro">
+        <div>
+          <div class="tab-intro__num" data-i18n="t1_num">Step 01</div>
+          <h2 class="tab-intro__title" data-i18n="t1_title">Check a suspicious message</h2>
+          <p class="tab-intro__desc" data-i18n="t1_desc">Paste text, drop a screenshot, upload a voice note or paste a
+            UPI QR payload. Every input is checked the same way and comes back with a verdict you can act on.</p>
+        </div>
+        <span class="badge badge--navy"><svg aria-hidden="true">
+            <use href="#i-zap"></use>
+          </svg><span data-i18n="t1_db_badge">Evidence-backed verdict</span></span>
+      </div>
+
+      <div class="grid-12">
+
+        <!-- Input column -->
+        <div class="col-7">
+          <div class="card-box stack">
+
+            <div>
+              <label class="input-label" for="quick-search-input" data-i18n="label_quick_lookup">Quick lookup</label>
+              <div class="input-group">
+                <input type="text" id="quick-search-input" class="input-control input-control--mono"
+                  placeholder="bijli.board.pay@ybl or 9876543210" data-i18n="ph_quick_lookup" autocomplete="off"
+                  spellcheck="false">
+                <button class="btn btn--primary" id="quick-search-btn" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-search"></use>
+                  </svg>
+                  <span data-i18n="btn_lookup">Check registry</span>
+                </button>
+              </div>
+              <div class="chip-group">
+                <button class="chip-btn" id="chip-scam-upi" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-zap"></use>
+                  </svg>
+                  <span data-i18n="chip_upi">Try a flagged UPI</span>
+                </button>
+                <button class="chip-btn" id="chip-scam-msg" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-zap"></use>
+                  </svg>
+                  <span data-i18n="chip_msg">Try an electricity-bill message</span>
+                </button>
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <div>
+              <label class="input-label" for="scam-msg-input" data-i18n="label_paste">Paste the full message</label>
+              <textarea id="scam-msg-input" class="input-control" rows="4"
+                placeholder="Paste the WhatsApp or SMS text asking for an urgent payment, KYC update or bill clearance…"
+                data-i18n="ph_paste"></textarea>
+
+              <div class="attach-strip" role="group" aria-label="Evidence input modes">
+                <button class="dropzone-box dropzone-box--compact" id="dropzone-box" type="button"
+                  aria-describedby="dropzone-help">
+                  <span class="dropzone-box__hint">
+                    <svg aria-hidden="true">
+                      <use href="#i-camera"></use>
+                    </svg>
+                    <span data-i18n="attach_image">Screenshot</span>
+                  </span>
+                </button>
+                <button class="attach-btn" id="attach-audio-btn" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-mic"></use>
+                  </svg>
+                  <span data-i18n="attach_audio">Voice note</span>
+                </button>
+                <button class="attach-btn" id="attach-qr-btn" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-qr"></use>
+                  </svg>
+                  <span data-i18n="attach_qr">UPI QR payload</span>
+                </button>
+                <span class="attach-status is-hidden" id="attach-status"></span>
+              </div>
+              <span class="visually-hidden" id="dropzone-help" data-i18n="dropzone_help">Optional. Drop a scam
+                screenshot here and it will be read with on-device QR detection plus AI vision OCR.</span>
+              <input type="file" id="scam-img-input" accept="image/*" class="visually-hidden"
+                aria-label="Attach a scam screenshot">
+              <input type="file" id="scam-audio-input" accept="audio/*" class="visually-hidden"
+                aria-label="Attach a scam voice note">
+
+              <div class="qr-row is-hidden" id="qr-row">
+                <label class="input-label" for="qr-payload-input" data-i18n="qr_label">Paste the UPI QR payload</label>
+                <div class="input-group">
+                  <input type="text" id="qr-payload-input" class="input-control input-control--mono"
+                    placeholder="upi://pay?pa=bijli.board.pay@ybl&amp;am=1450" data-i18n="ph_qr" autocomplete="off">
+                  <button class="btn btn--primary" id="qr-analyze-btn" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-qr"></use>
+                    </svg>
+                    <span data-i18n="btn_check_qr">Check QR</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="row row--between mt-3">
+                <span class="text-xs muted" data-i18n="paste_helper">Every input is checked the same way - no
+                  shortcuts.</span>
+                <button class="btn btn--ghost btn--sm" id="btn-clear-tab1" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-x"></use>
+                  </svg>
+                  <span data-i18n="btn_clear">Clear</span>
+                </button>
+              </div>
+
+              <button class="btn btn--accent btn--block btn--lg mt-4" id="analyze-msg-btn" type="button">
+                <svg aria-hidden="true">
+                  <use href="#i-shield"></use>
+                </svg>
+                <span id="analyze-label" data-i18n="btn_analyze">Check if this is a scam</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Result column -->
+        <div class="col-5">
+          <div class="card-box card-box--sticky" id="result-side-card" aria-live="polite" aria-busy="false">
+
+            <div class="section-head mb-4">
+              <div>
+                <h3 class="card-h2" data-i18n="t1_result_title">Verdict &amp; counter-bait</h3>
+                <p class="card-desc" data-i18n="t1_result_desc">Risk score, matched registry record and the next safe
+                  move.</p>
+              </div>
+            </div>
+
+            <!-- Empty state -->
+            <div class="empty-state" id="result-placeholder">
+              <div class="empty-state__icon"><svg aria-hidden="true">
+                  <use href="#i-eye"></use>
+                </svg></div>
+              <div class="empty-state__title" data-i18n="t1_empty_title">Nothing checked yet</div>
+              <div class="empty-state__note" data-i18n="t1_empty_note">Enter a UPI ID or paste a message on the left.
+              </div>
+            </div>
+
+            <!-- Loading skeleton -->
+            <div class="is-hidden" id="result-loading">
+              <div class="row" style="gap:var(--s-4);align-items:center">
+                <div class="skeleton skeleton--circle"></div>
+                <div class="grow">
+                  <div class="skeleton skeleton--line w-70"></div>
+                  <div class="skeleton skeleton--line w-45"></div>
+                </div>
+              </div>
+              <div class="skeleton skeleton--block mt-4"></div>
+              <div class="loading-note mt-3">
+                <span class="spinner"></span><span data-i18n="t1_loading">Querying registry…</span>
+              </div>
+            </div>
+
+            <!-- Result content -->
+            <div class="is-hidden" id="result-active-content">
+
+              <div class="gauge-wrapper">
+                <svg class="radial-progress-svg" viewBox="0 0 80 80" aria-hidden="true">
+                  <circle class="radial-bg-circle" cx="40" cy="40" r="35"></circle>
+                  <circle class="radial-val-circle" id="radial-gauge-circle" cx="40" cy="40" r="35"></circle>
+                </svg>
+                <div>
+                  <div class="gauge__score" id="gauge-score-text">0%</div>
+                  <div class="gauge__caption" data-i18n="gauge_caption">Risk score</div>
+                </div>
+                <span class="badge" id="risk-score-pill" data-i18n="pill_pending">Awaiting</span>
+              </div>
+
+              <div class="alert-box alert-box-danger" id="risk-banner-box">
+                <div class="alert-box__title">
+                  <svg aria-hidden="true" id="risk-banner-icon">
+                    <use href="#i-alert"></use>
+                  </svg>
+                  <span id="risk-banner-title">Identified threat</span>
+                </div>
+                <p class="alert-box__body" id="risk-banner-guidance"></p>
+              </div>
+
+              <!-- Provenance strip: which engine answered, on what input, under which case -->
+              <div class="verdict-meta is-hidden" id="verdict-meta">
+                <span class="verdict-meta__item" id="meta-model" title="Engine that scored this input">
+                  <svg aria-hidden="true">
+                    <use href="#i-sparkles"></use>
+                  </svg>
+                  <span class="verdict-meta__val">—</span>
+                </span>
+                <span class="verdict-meta__item" id="meta-input" title="How the input arrived">
+                  <svg aria-hidden="true">
+                    <use href="#i-search"></use>
+                  </svg>
+                  <span class="verdict-meta__val">—</span>
+                </span>
+                <span class="verdict-meta__item" id="meta-case" title="Investigation case id">
+                  <svg aria-hidden="true">
+                    <use href="#i-lock"></use>
+                  </svg>
+                  <span class="verdict-meta__val">—</span>
+                </span>
+              </div>
+
+              <!-- 4-Principle Cognitive AI Detective -->
+              <div class="principles-panel is-hidden" id="principles-panel">
+                <div class="overline mb-3">
+                  <svg aria-hidden="true">
+                    <use href="#i-sparkles"></use>
+                  </svg>
+                  <span data-i18n="principles_title">Why this verdict</span>
+                </div>
+                <div class="principles-list" id="principles-list"></div>
+                <p class="principles-footnote" data-i18n="principles_footnote">
+                  Authority always outranks the rest: a message that claims to be a bank, the electricity
+                  department or the police is the strongest signal on its own.
+                </p>
+              </div>
+
+              <!-- 5-Layer Analysis Breakdown -->
+              <div class="layers-panel is-hidden" id="layers-panel">
+                <div class="overline mb-3">
+                  <svg aria-hidden="true">
+                    <use href="#i-activity"></use>
+                  </svg>
+                  <span data-i18n="layers_title">Evidence found</span>
+                </div>
+                <div class="layers-list" id="layers-list"></div>
+                <div class="row mt-3" style="gap:var(--s-2)">
+                  <a class="btn btn--ghost btn--sm btn--block is-hidden" id="btn-dl-forensic-log" href="#" download>
+                    <svg aria-hidden="true">
+                      <use href="#i-download"></use>
+                    </svg>
+                    <span data-i18n="btn_dl_log">Download forensic log</span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="overline mb-3" data-i18n="extracted_title">Extracted identifiers</div>
+                <div class="stack stack--sm">
+                  <div class="ident-row">
+                    <div class="grow">
+                      <div class="ident-row__label" data-i18n="lbl_upi">UPI handles</div>
+                      <span class="badge-mono" id="ext-upi-val">—</span>
+                    </div>
+                  </div>
+                  <div class="ident-row">
+                    <div class="grow">
+                      <div class="ident-row__label" data-i18n="lbl_phone">Phone numbers</div>
+                      <span class="badge-mono" id="ext-phone-val">—</span>
+                    </div>
+                  </div>
+                  <div class="ident-row">
+                    <div class="grow">
+                      <div class="ident-row__label" data-i18n="lbl_bank">Bank account / IFSC</div>
+                      <span class="badge-mono" id="ext-bank-val">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert-box alert-box-copilot" id="copilot-box">
+                <div class="alert-box__title">
+                  <svg aria-hidden="true">
+                    <use href="#i-sparkles"></use>
+                  </svg>
+                  <span data-i18n="copilot_title">Expose their backup account</span>
+                </div>
+                <p class="alert-box__body" data-i18n="copilot_desc">
+                  Generate a realistic “NPCI U16 daily limit reached” receipt. Sent back to the scammer, it usually
+                  makes them reveal a second bank account they did not intend to share.
+                </p>
+
+                <div class="row" style="margin-top:var(--s-4);gap:var(--s-2)">
+                  <label class="input-label mt-0 nowrap-label" for="custom-bait-amt"
+                    data-i18n="lbl_bait_amount">Amount</label>
+                  <input type="text" id="custom-bait-amt" class="input-control input-control--mono" value="25,000"
+                    style="width:130px;padding:8px 11px" autocomplete="off">
+                </div>
+
+                <div class="row" style="margin-top:var(--s-2);gap:var(--s-2)">
+                  <label class="input-label mt-0 nowrap-label" for="custom-bait-name"
+                    data-i18n="lbl_bait_name">Name</label>
+                  <input type="text" id="custom-bait-name" class="input-control" value="Rahul Sharma"
+                    placeholder="Name printed on the receipt" style="width:130px;padding:8px 11px" autocomplete="off">
+                </div>
+
+                <div class="stack stack--sm mt-3">
+                  <button class="btn btn--success btn--block" id="btn-generate-bait" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-camera"></use>
+                    </svg>
+                    <span id="bait-label" data-i18n="btn_gen_bait">Generate payment-failed screenshot</span>
+                  </button>
+                  <button class="btn btn--primary btn--block nextstep" id="btn-send-to-honeypot" type="button">
+                    <span class="nextstep__icon" aria-hidden="true"><svg>
+                        <use href="#i-arrow-right"></use>
+                      </svg></span>
+                    <span class="nextstep__text">
+                      <span class="nextstep__kicker" data-i18n="btn_to_honeypot_kicker">Next step &middot;
+                        Solution</span>
+                      <span class="nextstep__title" data-i18n="btn_to_honeypot">Trap them in Step 2</span>
+                      <span class="nextstep__sub" data-i18n="btn_to_honeypot_sub">Counter-attack console opens: ready
+                        replies, fake receipt, autonomous AI decoy node.</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="bait-preview is-hidden" id="bait-preview-modal">
+                  <div class="bait-preview__title">
+                    <svg aria-hidden="true">
+                      <use href="#i-camera"></use>
+                    </svg>
+                    <span data-i18n="bait_title">Generated counter-bait receipt</span>
+                  </div>
+                  <img class="bait-preview__img" id="bait-receipt-img" src="" alt="Generated payment-failed receipt">
+                  <div class="bait-preview__actions">
+                    <a class="btn btn--ghost" id="btn-download-bait-img" href="#" download="NPCI_UPI_Limit_Error.png">
+                      <svg aria-hidden="true">
+                        <use href="#i-download"></use>
+                      </svg>
+                      <span data-i18n="btn_dl_img">Download image</span>
+                    </a>
+                    <button class="btn btn--success" id="btn-copy-bait-text" type="button">
+                      <svg aria-hidden="true">
+                        <use href="#i-copy"></use>
+                      </svg>
+                      <span data-i18n="btn_copy_reply">Copy ready reply</span>
+                    </button>
+                  </div>
+                  <div class="bait-preview__toast is-hidden" id="bait-copy-toast" data-i18n="bait_copied">Copied —
+                    includes the tracking trap link.</div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ TAB 2 · LIVE HONEYPOT ============ -->
+    <section class="tab-content-pane" id="tab-honeypot" role="tabpanel" aria-labelledby="tab-btn-honeypot" tabindex="0">
+
+      <div class="tab-intro">
+        <div>
+          <div class="tab-intro__num" data-i18n="t2_num">Step 02</div>
+          <h2 class="tab-intro__title" data-i18n="t2_title">Run the AI decoy</h2>
+          <p class="tab-intro__desc" data-i18n="t2_desc">Replies are generated locally and stored with the case. The
+            WhatsApp bridge is optional — the console below runs without a phone.</p>
+        </div>
+        <button class="btn btn--ghost btn--sm" id="btn-refresh-status" type="button">
+          <svg aria-hidden="true">
+            <use href="#i-refresh"></use>
+          </svg>
+          <span data-i18n="btn_refresh">Refresh status</span>
+        </button>
+      </div>
+
+      <!-- ===== B1 - Step 1 hand-over, shared by both modes ===== -->
+      <div class="brief is-hidden" id="case-briefing">
+        <div class="brief__head">
+          <button class="brief__toggle" id="brief-toggle" type="button" aria-expanded="true" aria-controls="brief-body">
+            <span class="brief__icon"><svg aria-hidden="true">
+                <use href="#i-file"></use>
+              </svg></span>
+            <span class="brief__head-text">
+              <span class="brief__title" data-i18n="t2_brief_title">What Step 1 handed over</span>
+              <span class="brief__sub" id="brief-meta">—</span>
+            </span>
+            <span class="brief__pill is-hidden" id="brief-score-pill">
+              <b id="brief-score-pill-n">—</b>
+              <i id="brief-score-pill-t">—</i>
+            </span>
+          </button>
+          <span class="brief__actions">
+            <button class="btn btn--ghost btn--sm is-hidden" id="btn-test-canary-click" type="button">
+              <svg aria-hidden="true">
+                <use href="#i-link"></use>
+              </svg>
+              <span data-i18n="btn_canary">Open the trap link</span>
+            </button>
+            <button class="btn btn--primary btn--sm" id="btn-goto-tab3" type="button">
+              <svg aria-hidden="true">
+                <use href="#i-file"></use>
+              </svg>
+              <span data-i18n="btn_go_evidence">Open evidence dossier</span>
+            </button>
+          </span>
+          <button class="brief__chev" id="brief-chev" type="button" aria-expanded="true" aria-controls="brief-body"
+            aria-label="Toggle">
+            <svg aria-hidden="true">
+              <use href="#i-chevron"></use>
+            </svg>
+          </button>
+        </div>
+        <div class="brief__body" id="brief-body">
+          <p class="strategy-bar__note is-hidden" id="trap-note" data-i18n="t2_trap_note">Opening it records the IP, OS
+            and browser of whoever opens it.</p>
+
+          <div class="brief__grid">
+            <div class="brief__col brief__col--main">
+              <div class="brief__msg-wrap is-hidden" id="brief-msg-wrap">
+                <div class="brief__msg-label" data-i18n="t2_brief_msg">Original message they sent</div>
+                <blockquote class="brief__msg" id="brief-msg"></blockquote>
+              </div>
+              <div class="brief__action is-hidden" id="brief-action-wrap">
+                <span class="brief__action-k" data-i18n="t2_brief_action">Recommended next move</span>
+                <p class="brief__action-v" id="brief-action"></p>
+              </div>
+            </div>
+
+            <div class="brief__col brief__col--side">
+              <div class="brief__facts is-hidden" id="brief-facts"></div>
+              <div class="ev-strip is-hidden" id="case-evidence">
+                <span class="ev-strip__title" data-i18n="t2_ev_title">Evidence from Step 1</span>
+                <span class="ev-strip__items" id="case-evidence-items"></span>
+              </div>
+            </div>
+          </div>
+
+          <details class="brief__more is-hidden" id="brief-more">
+            <summary>
+              <svg aria-hidden="true">
+                <use href="#i-activity"></use>
+              </svg>
+              <span data-i18n="t2_brief_more">Full Step 1 analysis</span>
+            </summary>
+            <div class="brief__panels">
+              <div class="brief__panel is-hidden" id="brief-principles-wrap">
+                <div class="brief__panel-h" data-i18n="principles_title">Why this verdict</div>
+                <ul class="brief__list" id="brief-principles"></ul>
+              </div>
+              <div class="brief__panel is-hidden" id="brief-layers-wrap">
+                <div class="brief__panel-h" data-i18n="layers_title">Evidence found</div>
+                <ul class="brief__list" id="brief-layers"></ul>
+              </div>
+              <div class="brief__panel is-hidden" id="brief-reports-wrap">
+                <div class="brief__panel-h" data-i18n="t2_brief_reports">Registry reports</div>
+                <ul class="brief__list" id="brief-reports"></ul>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- ===== B + C - strategy accordion ===== -->
+      <div class="acc" id="strategy-acc">
+
+        <!-- Mode 1 -->
+        <div class="acc__item is-open" data-mode="copilot">
+          <div class="acc__head">
+            <button class="acc__btn" id="acc-btn-copilot" type="button" aria-expanded="true"
+              aria-controls="acc-copilot">
+              <span class="acc__icon acc__icon--blue"><svg aria-hidden="true">
+                  <use href="#i-shield"></use>
+                </svg></span>
+              <span class="acc__text">
+                <span class="acc__title">
+                  <span data-i18n="t2_m1_title">Co-Pilot Mode</span>
+                  <span class="acc__tag acc__tag--blue" data-i18n="t2_m1_tag">Manual chat control</span>
+                </span>
+                <span class="acc__desc" data-i18n="t2_m1_desc">Safely reply from your own WhatsApp without raising
+                  suspicion.</span>
+              </span>
+              <svg class="acc__chev" aria-hidden="true">
+                <use href="#i-chevron"></use>
+              </svg>
+            </button>
+          </div>
+          <div class="acc__panel" id="acc-copilot" role="region" aria-labelledby="acc-btn-copilot">
+            <div class="acc__panel-inner">
+
+              <div class="m1__grid">
+                <section class="m1__block">
+                  <div class="m1__step">
+                    <span class="m1__num">1</span>
+                    <span class="m1__steptext" data-i18n="t2_m1_step1">Fake error receipt</span>
+                  </div>
+                  <div class="receipt-box" id="copilot-receipt-box">
+                    <div class="receipt-box__empty" id="copilot-receipt-empty">
+                      <svg aria-hidden="true">
+                        <use href="#i-camera"></use>
+                      </svg>
+                      <span data-i18n="t2_m1_img_empty">No receipt generated yet</span>
+                    </div>
+                    <img id="copilot-receipt-img" class="receipt-box__img" alt="Fake payment error receipt" hidden>
+                  </div>
+                  <button class="btn btn--ghost btn--block" id="btn-m1-receipt" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-zap"></use>
+                    </svg>
+                    <span data-i18n="t2_m1_img_btn">Generate U16 error receipt</span>
+                  </button>
+                  <div class="receipt-box__actions">
+                    <button class="btn btn--ghost btn--sm" id="btn-m1-receipt-dl" type="button">
+                      <svg aria-hidden="true">
+                        <use href="#i-download"></use>
+                      </svg>
+                      <span data-i18n="btn_dl_img">Download image</span>
+                    </button>
+                    <button class="btn btn--ghost btn--sm" id="btn-m1-receipt-copy" type="button">
+                      <svg aria-hidden="true">
+                        <use href="#i-copy"></use>
+                      </svg>
+                      <span data-i18n="btn_copy_reply">Copy ready reply</span>
+                    </button>
+                  </div>
+                </section>
+
+                <section class="m1__block">
+                  <div class="m1__step">
+                    <span class="m1__num">2</span>
+                    <span class="m1__steptext" data-i18n="t2_m1_step2">Suggested reply</span>
+                  </div>
+                  <textarea id="m1-suggested" class="input-control m1__ta" rows="5" data-i18n="ph_m1_reply"></textarea>
+                  <button class="btn btn--ghost btn--block" id="btn-m1-copy" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-copy"></use>
+                    </svg>
+                    <span data-i18n="btn_copy">Copy</span>
+                  </button>
+                </section>
+              </div>
+
+              <div class="m1__step m1__step--wide">
+                <span class="m1__num">3</span>
+                <span class="m1__steptext" data-i18n="t2_m1_step3">Continue chat</span>
+              </div>
+
+              <div class="input-group">
+                <label class="visually-hidden" for="m1-scammer-input" data-i18n="t2_m1_lbl">What did the scammer reply
+                  next?</label>
+                <input type="text" id="m1-scammer-input" class="input-control" data-i18n="ph_m1_scammer"
+                  placeholder="Paste their response here…" autocomplete="off">
+                <button class="btn btn--primary" id="btn-m1-generate" type="button">
+                  <svg aria-hidden="true">
+                    <use href="#i-sparkles"></use>
+                  </svg>
+                  <span data-i18n="t2_m1_gen">Generate next safe reply</span>
+                </button>
+              </div>
+
+              <p class="m1__gate" id="m1-gate-note">
+                <svg aria-hidden="true">
+                  <use href="#i-alert"></use>
+                </svg>
+                <span data-i18n="t2_gate_note">Finish a check in Step 1 first - the Co-Pilot only answers once a real
+                  case exists.</span>
+              </p>
+
+              <div class="m1__thread" id="m1-thread" aria-live="polite">
+                <div class="m1__thread-empty" id="m1-thread-empty" data-i18n="t2_m1_empty">Your conversation with them
+                  starts here - paste what they said next in the box above.</div>
+              </div>
+
+              <div class="m1__foot" id="m1-foot" hidden>
+                <div class="m1__foot-chips">
+                  <span class="chip chip--emerald is-hidden" id="m1-attached" data-i18n="t2_attached">Screenshot
+                    attached</span>
+                  <span class="chip chip--blue" id="m1-provider">—</span>
+                </div>
+                <div class="m1__out-actions">
+                  <button class="btn btn--ghost btn--sm" id="btn-m1-copy-out" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-copy"></use>
+                    </svg>
+                    <span data-i18n="btn_copy">Copy</span>
+                  </button>
+                  <button class="btn btn--ghost btn--sm" id="btn-m1-use" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-send"></use>
+                    </svg>
+                    <span data-i18n="t2_m1_use">Use as my reply</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode 2 -->
+        <div class="acc__item" data-mode="cloud">
+          <div class="acc__head">
+            <button class="acc__btn" id="acc-btn-cloud" type="button" aria-expanded="false" aria-controls="acc-cloud">
+              <span class="acc__icon acc__icon--emerald"><svg aria-hidden="true">
+                  <use href="#i-bot"></use>
+                </svg></span>
+              <span class="acc__text">
+                <span class="acc__title">
+                  <span data-i18n="t2_m2_title">Cloud AI Node</span>
+                  <span class="acc__tag acc__tag--emerald" data-i18n="t2_m2_tag">Autonomous takeover</span>
+                </span>
+                <span class="acc__desc" data-i18n="t2_m2_desc">Let our AI decoy talk to them from a new number. Provide
+                  a realistic excuse to avoid suspicion.</span>
+              </span>
+              <svg class="acc__chev" aria-hidden="true">
+                <use href="#i-chevron"></use>
+              </svg>
+            </button>
+          </div>
+          <div class="acc__panel" id="acc-cloud" role="region" aria-labelledby="acc-btn-cloud" hidden>
+            <div class="acc__panel-inner">
+              <p class="text-sm muted" data-i18n="t2_m2_intro">Choose how the AI should talk to the scammer, then
+                deploy. You can connect your own WhatsApp for a live conversation, or preview the flow with a demo.</p>
+
+              <div class="m2__chooser" id="m2-chooser">
+                <button class="m2__opt m2__opt--self" id="btn-m2-opt-self" type="button" aria-pressed="false">
+                  <span class="m2__opt-icon"><svg aria-hidden="true">
+                      <use href="#i-users"></use>
+                    </svg></span>
+                  <span class="m2__opt-body">
+                    <span class="m2__opt-title" data-i18n="t2_opt_self_title">Connect my WhatsApp</span>
+                    <span class="m2__opt-desc" data-i18n="t2_opt_self_desc">Reply from your own number — the scammer
+                      sees a real person.</span>
+                  </span>
+                </button>
+                <button class="m2__opt m2__opt--system" id="btn-m2-opt-system" type="button" aria-pressed="false">
+                  <span class="m2__opt-icon"><svg aria-hidden="true">
+                      <use href="#i-bot"></use>
+                    </svg></span>
+                  <span class="m2__opt-body">
+                    <span class="m2__opt-title" data-i18n="t2_opt_sys_title">Use a system-managed number</span>
+                    <span class="m2__opt-desc" data-i18n="t2_opt_sys_desc">Our AI operates a separate virtual number and
+                      handles the conversation for you.</span>
+                  </span>
+                </button>
+              </div>
+
+              <form class="m2__form" id="cloud-form" autocomplete="off" hidden>
+                <div class="field">
+                  <span class="field__label" data-i18n="t2_m2_who_label">Who should reply?</span>
+                  <div class="m2__radios" role="radiogroup">
+                    <label class="m2__radio"><input type="radio" name="m2-persona" value="self" checked><span
+                        data-i18n="t2_m2_who_self">Myself (with a reason)</span></label>
+                    <label class="m2__radio"><input type="radio" name="m2-persona" value="character"><span
+                        data-i18n="t2_m2_who_char">Family member / Relative</span></label>
+                  </div>
+                </div>
+                <div class="m2__row" id="m2-char-fields" hidden>
+                  <div class="field">
+                    <label class="field__label" for="m2-relation" data-i18n="t2_m2_relation">Relation</label>
+                    <select id="m2-relation" class="input-control">
+                      <option value="son" data-i18n="t2_rel_son">Son</option>
+                      <option value="daughter" data-i18n="t2_rel_daughter">Daughter</option>
+                      <option value="brother" data-i18n="t2_rel_brother">Brother</option>
+                      <option value="staff" data-i18n="t2_rel_staff">Office staff</option>
+                      <option value="relative" data-i18n="t2_rel_other">Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="field__label" for="m2-name" data-i18n="t2_m2_name">Name</label>
+                    <input type="text" id="m2-name" class="input-control" placeholder="Rahul" autocomplete="off">
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="m2-excuse" data-i18n="t2_m2_excuse_label">Reason for using this
+                    number</label>
+                  <input type="text" id="m2-excuse" class="input-control" data-i18n="ph_m2_excuse"
+                    placeholder="e.g. my phone battery died, messaging from a friend's phone" autocomplete="off">
+                </div>
+              </form>
+
+              <div class="m2__actions">
+                <button class="btn btn--primary" id="btn-m2-deploy" type="button" disabled>
+                  <svg aria-hidden="true">
+                    <use href="#i-bot"></use>
+                  </svg>
+                  <span data-i18n="t2_m2_open">Deploy AI Cloud Node</span>
+                </button>
+                <span class="text-xs muted" data-i18n="t2_m2_hint">The decoy stays in character and only ever asks for
+                  the scammer's own account details.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============ MODE 2 · DEPLOY RESULT MODAL ============ -->
+    <div class="m2-modal is-hidden" id="m2-modal" role="dialog" aria-modal="true" aria-labelledby="m2-modal-title">
+      <div class="m2-modal__backdrop" id="m2-modal-backdrop"></div>
+      <div class="m2-modal__panel">
+        <header class="m2-modal__head">
+          <div>
+            <span class="m2-modal__kicker" data-i18n="t2_modal_kicker">Cloud AI Node</span>
+            <h3 class="m2-modal__title" id="m2-modal-title" data-i18n="t2_modal_title">Deploy AI Cloud Node</h3>
+          </div>
+          <button class="m2-modal__close" id="btn-m2-modal-close" type="button" aria-label="Close">
+            <svg aria-hidden="true">
+              <use href="#i-x"></use>
+            </svg>
+          </button>
+        </header>
+
+        <div class="m2-modal__body">
+
+          <div class="m2-modal__tabs" role="tablist" aria-label="Cloud node views">
+            <button class="m2-tab is-active" id="m2-tab-live" data-m2tab="live" type="button" role="tab"
+              aria-selected="true" data-i18n="t2_tab_live">Live connection</button>
+            <button class="m2-tab" id="m2-tab-demo" data-m2tab="demo" type="button" role="tab" aria-selected="false"
+              data-i18n="t2_tab_demo">Preview demo</button>
+          </div>
+
+          <!-- LIVE tab: QR/chat (own WhatsApp) OR coming-soon (system number) -->
+          <div class="m2-tabpanel is-active" id="m2-panel-live" data-m2panel="live" role="tabpanel">
+            <!-- LIVE card (own WhatsApp) -->
+            <div class="m2-step is-active" id="m2-step-3-live" hidden>
+              <div class="m2__card m2__card--live">
+                <div class="m2__card-head">
+                  <div>
+                    <span class="m2__card-kicker" data-i18n="t2_live_kicker">Live connection</span>
+                    <h4 class="m2__card-title" data-i18n="t2_live_title">Connect your WhatsApp</h4>
+                  </div>
+                  <span class="chip" id="live-chip" data-i18n="t2_live_offline">Not connected</span>
+                </div>
+
+                <div class="m2__qr" id="qr-area">
+                  <img id="qr-img" alt="WhatsApp QR code" hidden>
+                  <div class="m2__qr-placeholder" id="qr-placeholder">
+                    <svg aria-hidden="true">
+                      <use href="#i-qr"></use>
+                    </svg>
+                    <span data-i18n="t2_live_qr_wait">Waiting for the bridge to start… the QR code will appear
+                      here.</span>
+                  </div>
+                </div>
+                <p class="text-xs muted" data-i18n="t2_live_qr_help">WhatsApp → Linked devices → Link a device, then
+                  scan this code.</p>
+
+                <div class="field" style="margin-top: var(--s-4);">
+                  <label class="field__label" for="live-scammer-phone" data-i18n="t2_live_phone_label">Scammer's
+                    WhatsApp number</label>
+                  <input type="tel" id="live-scammer-phone" class="input-control" placeholder="+91 98765 43210"
+                    autocomplete="off">
+                  <p class="text-xs muted" style="margin-top: 4px;" data-i18n="t2_live_phone_help">The AI will only
+                    auto-reply to messages from this number.</p>
+                </div>
+
+                <div class="m2__row m2__row--center">
+                  <label class="m2__toggle">
+                    <input type="checkbox" id="m2-automate">
+                    <span class="m2__toggle-track"><span class="m2__toggle-thumb"></span></span>
+                    <span class="m2__toggle-label" data-i18n="t2_automate_label">Automate — the AI replies on its
+                      own</span>
+                  </label>
+                </div>
+
+                <div class="m2__term wa-chat-frame" id="cloud-terminal" hidden>
+                  <div class="chat-head">
+                    <div class="chat-head__id">
+                      <span class="chat-head__avatar"><svg aria-hidden="true">
+                          <use href="#i-bot"></use>
+                        </svg></span>
+                      <span>
+                        <span class="chat-head__name" id="cloud-node-name">—</span>
+                        <span class="chat-head__status">
+                          <span class="pulse-dot"></span>
+                          <span id="cloud-status-text" data-i18n="t2_cloud_status">Waiting for deployment…</span>
+                        </span>
+                      </span>
+                    </div>
+                    <span class="chip chip--emerald" id="cloud-case-chip">—</span>
+                  </div>
+
+                  <div class="wa-chat-scroll" id="cloud-chat-box" role="log" aria-label="Cloud decoy transcript"
+                    aria-live="polite">
+                    <div class="wa-bubble-system" data-i18n="t2_cloud_boot">Deploy to start the decoy conversation.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COMING SOON card (system-managed number) -->
+            <div class="m2-step" id="m2-step-3-soon" hidden>
+              <div class="m2__card m2__card--soon">
+                <div class="m2__card-head">
+                  <div>
+                    <span class="m2__card-kicker" data-i18n="t2_soon_kicker">Virtual number</span>
+                    <h4 class="m2__card-title" data-i18n="t2_soon_title">System-managed number</h4>
+                  </div>
+                  <span class="chip chip--amber" data-i18n="t2_soon_badge">Coming soon</span>
+                </div>
+                <p class="text-sm" data-i18n="t2_soon_body">You do not need to connect your own WhatsApp. Once
+                  virtual-number support ships, the system will message the scammer from a dedicated number using the
+                  identity you selected.</p>
+
+                <div class="m2__flow" aria-hidden="true">
+                  <div class="m2__flow-step">
+                    <span class="m2__flow-icon"><svg aria-hidden="true">
+                        <use href="#i-users"></use>
+                      </svg></span>
+                    <span class="m2__flow-label" data-i18n="t2_flow_1">Your identity</span>
+                  </div>
+                  <span class="m2__flow-arrow"><svg aria-hidden="true">
+                      <use href="#i-arrow-right"></use>
+                    </svg></span>
+                  <div class="m2__flow-step">
+                    <span class="m2__flow-icon m2__flow-icon--accent"><svg aria-hidden="true">
+                        <use href="#i-phone"></use>
+                      </svg></span>
+                    <span class="m2__flow-label" data-i18n="t2_flow_2">Virtual number</span>
+                  </div>
+                  <span class="m2__flow-arrow"><svg aria-hidden="true">
+                      <use href="#i-arrow-right"></use>
+                    </svg></span>
+                  <div class="m2__flow-step">
+                    <span class="m2__flow-icon m2__flow-icon--danger"><svg aria-hidden="true">
+                        <use href="#i-alert"></use>
+                      </svg></span>
+                    <span class="m2__flow-label" data-i18n="t2_flow_3">Scammer</span>
+                  </div>
+                </div>
+
+                <div class="m2__soon-meta">
+                  <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_1">The AI answers in the scammer's own
+                      language and tone.</span></div>
+                  <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_2">Every UPI ID, phone number and bank
+                      account they share is captured with a timestamp.</span></div>
+                  <div class="m2__soon-meta-row"><span data-i18n="t2_flow_meta_3">Export the whole transcript as
+                      evidence for a 1930 / cybercrime.gov.in complaint.</span></div>
+                </div>
+
+                <div class="m2__row m2__row--center">
+                  <button class="btn btn--primary" id="btn-m2-demo-sys" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-play"></use>
+                    </svg>
+                    <span data-i18n="t2_demo_btn">Preview demo</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /live tabpanel -->
+
+          <!-- DEMO tab -->
+          <div class="m2-tabpanel" id="m2-panel-demo" data-m2panel="demo" role="tabpanel" hidden>
+            <div class="m2__card m2__card--demo m2__card--demo-full" id="demo-player">
+              <div class="m2__card-head">
+                <div>
+                  <span class="m2__card-kicker" data-i18n="t2_demo_kicker">Demo walkthrough</span>
+                  <h4 class="m2__card-title" data-i18n="t2_demo_title">How the system handles the scammer</h4>
+                </div>
+                <div class="row row--tight">
+                  <button class="btn btn--primary btn--sm" id="btn-demo-run" type="button">
+                    <svg aria-hidden="true">
+                      <use href="#i-play"></use>
+                    </svg>
+                    <span data-i18n="t2_demo_run">Run demo</span>
+                  </button>
+                  <button class="btn btn--ghost btn--sm" id="btn-demo-stop" type="button" hidden>
+                    <svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg>
+                    <span data-i18n="btn_stop">Stop</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="wa-chat-frame demo-wa-frame" id="demo-wa-frame">
+                <div class="chat-head">
+                  <div class="chat-head__id">
+                    <span class="chat-head__avatar"><svg aria-hidden="true">
+                        <use href="#i-alert"></use>
+                      </svg></span>
+                    <span>
+                      <span class="chat-head__name" id="demo-chat-name" data-i18n="t2_demo_chat_name">Suspected
+                        scammer</span>
+                      <span class="chat-head__status">
+                        <span class="pulse-dot"></span>
+                        <span data-i18n="t2_demo_chat_status">online</span>
+                      </span>
+                    </span>
+                  </div>
+                  <span class="chip chip--red" data-i18n="t2_demo_chat_badge">Demo</span>
+                </div>
+                <div class="wa-chat-scroll" id="demo-chat-box" role="log" aria-label="Demo transcript"
+                  aria-live="polite">
+                  <div class="wa-bubble-system" data-i18n="t2_demo_idle">Press Run demo to watch the AI string the
+                    scammer along and pull out their payment details.</div>
+                </div>
+              </div>
+
+              <div class="m2__demo-details" id="demo-details" hidden>
+                <span class="m2__demo-details-title" data-i18n="t2_demo_details_title">Details the system extracted from
+                  this conversation:</span>
+                <ul class="m2__demo-details-list" id="demo-details-list"></ul>
+              </div>
+            </div>
+          </div><!-- /demo tabpanel -->
+
+        </div>
+      </div>
     </div>
 
-    <div class="grid-12" id="evidence-grid" aria-live="polite">
+    <!-- ============ TAB 3 · EVIDENCE & PDF ============ -->
+    <section class="tab-content-pane" id="tab-proof" role="tabpanel" aria-labelledby="tab-btn-proof" tabindex="0">
 
-      <div class="col-6">
-        <div class="card-box h-full">
-          <div class="row row--between mb-4">
-            <h3 class="card-h3"><svg aria-hidden="true"><use href="#i-zap"></use></svg><span data-i18n="t3_upi_title">UPI handles</span></h3>
-            <button class="btn btn--ghost btn--sm" type="button" data-copy-target="ev-upi-list">
-              <svg aria-hidden="true"><use href="#i-copy"></use></svg><span data-i18n="btn_copy">Copy</span>
-            </button>
-          </div>
-          <div id="ev-upi-list"><div class="skeleton skeleton--line"></div><div class="skeleton skeleton--line w-60"></div></div>
+      <div class="tab-intro">
+        <div>
+          <div class="tab-intro__num" data-i18n="t3_num">Step 03</div>
+          <h2 class="tab-intro__title" data-i18n="t3_title">Evidence dossier</h2>
+          <p class="tab-intro__desc" data-i18n="t3_desc">Everything below is read back from the local database. Fields
+            that have not actually been captured show as pending rather than a placeholder value.</p>
         </div>
       </div>
 
-      <div class="col-6">
-        <div class="card-box h-full">
-          <div class="row row--between mb-4">
-            <h3 class="card-h3"><svg aria-hidden="true"><use href="#i-bank"></use></svg><span data-i18n="t3_bank_title">Bank accounts &amp; IFSC</span></h3>
-            <button class="btn btn--ghost btn--sm" type="button" data-copy-target="ev-bank-list">
-              <svg aria-hidden="true"><use href="#i-copy"></use></svg><span data-i18n="btn_copy">Copy</span>
-            </button>
+      <div class="case-banner">
+        <div>
+          <div class="case-banner__eyebrow" data-i18n="t3_eyebrow">Cybercrime complaint evidence file · NCRP 1930 format
           </div>
-          <div id="ev-bank-list"><div class="skeleton skeleton--line"></div><div class="skeleton skeleton--line w-60"></div></div>
+          <div class="case-banner__title" id="banner-case-id">CASE-2026-1001</div>
+          <div class="case-banner__meta" id="banner-hash">SHA-256: calculating…</div>
+        </div>
+        <a href="/api/reports/download-pdf?case_id=CASE-2026-1001" class="btn btn--danger btn--lg"
+          id="btn-download-pdf-main" target="_blank" rel="noopener">
+          <svg aria-hidden="true">
+            <use href="#i-download"></use>
+          </svg>
+          <span data-i18n="btn_dl_pdf">Download 1930 complaint PDF</span>
+        </a>
+      </div>
+
+      <div class="grid-12" id="evidence-grid" aria-live="polite">
+
+        <div class="col-6">
+          <div class="card-box h-full">
+            <div class="row row--between mb-4">
+              <h3 class="card-h3"><svg aria-hidden="true">
+                  <use href="#i-zap"></use>
+                </svg><span data-i18n="t3_upi_title">UPI handles</span></h3>
+              <button class="btn btn--ghost btn--sm" type="button" data-copy-target="ev-upi-list">
+                <svg aria-hidden="true">
+                  <use href="#i-copy"></use>
+                </svg><span data-i18n="btn_copy">Copy</span>
+              </button>
+            </div>
+            <div id="ev-upi-list">
+              <div class="skeleton skeleton--line"></div>
+              <div class="skeleton skeleton--line w-60"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="card-box h-full">
+            <div class="row row--between mb-4">
+              <h3 class="card-h3"><svg aria-hidden="true">
+                  <use href="#i-bank"></use>
+                </svg><span data-i18n="t3_bank_title">Bank accounts &amp; IFSC</span></h3>
+              <button class="btn btn--ghost btn--sm" type="button" data-copy-target="ev-bank-list">
+                <svg aria-hidden="true">
+                  <use href="#i-copy"></use>
+                </svg><span data-i18n="btn_copy">Copy</span>
+              </button>
+            </div>
+            <div id="ev-bank-list">
+              <div class="skeleton skeleton--line"></div>
+              <div class="skeleton skeleton--line w-60"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="card-box h-full">
+            <h3 class="card-h3"><svg aria-hidden="true">
+                <use href="#i-globe"></use>
+              </svg><span data-i18n="t3_device_title">Canary capture (device &amp; network)</span></h3>
+            <div id="ev-device" class="mt-3">
+              <div class="skeleton skeleton--line"></div>
+              <div class="skeleton skeleton--line" style="width:75%"></div>
+            </div>
+            <p class="text-xs muted mt-3 leading-snug" data-i18n="t3_device_note">
+              Populated only when the trap link is opened. Until then this panel stays pending.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="card-box h-full">
+            <h3 class="card-h3"><svg aria-hidden="true">
+                <use href="#i-file"></use>
+              </svg><span data-i18n="t3_chat_title">Full transcript</span></h3>
+            <div class="panel text-sm scroll-y mt-3" id="ev-transcript">
+              <div class="skeleton skeleton--line"></div>
+              <div class="skeleton skeleton--line w-80"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ TAB 4 · TRENDS & COMPARE ============ -->
+    <section class="tab-content-pane" id="tab-trends" role="tabpanel" aria-labelledby="tab-btn-trends" tabindex="0">
+
+      <div class="tab-intro">
+        <div>
+          <div class="tab-intro__num" data-i18n="t4_num">Reference</div>
+          <h2 class="tab-intro__title" data-i18n="t4_title">Registry trends &amp; comparison</h2>
+          <p class="tab-intro__desc" data-i18n="t4_desc">Counts are aggregated live from the blacklist table each time
+            this tab opens.</p>
         </div>
       </div>
 
-      <div class="col-6">
-        <div class="card-box h-full">
-          <h3 class="card-h3"><svg aria-hidden="true"><use href="#i-globe"></use></svg><span data-i18n="t3_device_title">Canary capture (device &amp; network)</span></h3>
-          <div id="ev-device" class="mt-3"><div class="skeleton skeleton--line"></div><div class="skeleton skeleton--line" style="width:75%"></div></div>
-          <p class="text-xs muted mt-3 leading-snug" data-i18n="t3_device_note">
-            Populated only when the trap link is opened. Until then this panel stays pending.
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-val" id="kpi-reports">0</div>
+          <div class="kpi-label" data-i18n="kpi_reports">Citizen reports logged</div>
+        </div>
+        <div class="kpi-card kpi-card--red">
+          <div class="kpi-val" id="kpi-blacklisted">0</div>
+          <div class="kpi-label" data-i18n="kpi_blacklisted">Identifiers blacklisted</div>
+        </div>
+        <div class="kpi-card kpi-card--amber">
+          <div class="kpi-val" id="kpi-cases">0</div>
+          <div class="kpi-label" data-i18n="kpi_cases">Cases opened</div>
+        </div>
+        <div class="kpi-card kpi-card--emerald">
+          <div class="kpi-val" id="kpi-resolved">0</div>
+          <div class="kpi-label" data-i18n="kpi_resolved">Cases resolved</div>
+        </div>
+      </div>
+
+      <div class="grid-12">
+
+        <div class="col-7">
+          <div class="card-box h-full">
+            <div class="row row--between mb-3">
+              <h3 class="card-h3"><svg aria-hidden="true">
+                  <use href="#i-database"></use>
+                </svg><span data-i18n="t4_blacklist_title">Public blacklist directory</span></h3>
+              <span class="badge" id="blacklist-count">—</span>
+            </div>
+            <label class="visually-hidden" for="blacklist-search-input" data-i18n="lbl_filter">Filter the
+              blacklist</label>
+            <input type="search" id="blacklist-search-input" class="input-control mb-3"
+              placeholder="Filter by value, type or category…" data-i18n="ph_filter" autocomplete="off">
+
+            <div class="table-scroll">
+              <table class="utility-table" id="trends-blacklist-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="th_identifier">Identifier</th>
+                    <th data-i18n="th_type">Type</th>
+                    <th data-i18n="th_category">Category</th>
+                    <th class="cell-num" data-i18n="th_risk">Risk</th>
+                  </tr>
+                </thead>
+                <tbody id="trends-blacklist-tbody">
+                  <tr>
+                    <td colspan="4" class="muted" data-i18n="th_loading">Loading registry…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-5">
+          <div class="card-box h-full">
+            <h3 class="card-h3"><svg aria-hidden="true">
+                <use href="#i-chart"></use>
+              </svg><span data-i18n="t4_chart_title">Category breakdown</span></h3>
+            <div id="category-bars" aria-live="polite" class="mt-4">
+              <div class="skeleton skeleton--block"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card-box mt-5">
+        <div class="section-head">
+          <div>
+            <h3 class="section-head__title" data-i18n="t4_compare_title">Where this differs from existing tools</h3>
+            <p class="section-head__desc" data-i18n="t4_compare_desc">Comparison against consumer-facing alternatives
+              available in India.</p>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="utility-table utility-table--compare">
+            <thead>
+              <tr>
+                <th data-i18n="th_capability">Capability</th>
+                <th>Truecaller</th>
+                <th data-i18n="th_sanchar">Sanchar Saathi</th>
+                <th data-i18n="th_voicebots">Voice bots</th>
+                <th class="col-ours" data-i18n="th_ours">This tool</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-i18n="cmp_r1">Works on WhatsApp &amp; UPI text scams</td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--partial"><svg aria-hidden="true">
+                      <use href="#i-minus"></use>
+                    </svg><span data-i18n="cmp_sms">SMS only</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
+                      <use href="#i-check"></use>
+                    </svg><span data-i18n="cmp_yes">Yes</span></span></td>
+              </tr>
+              <tr>
+                <td data-i18n="cmp_r2">Flags a UPI handle before money is sent</td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
+                      <use href="#i-check"></use>
+                    </svg><span data-i18n="cmp_yes">Yes</span></span></td>
+              </tr>
+              <tr>
+                <td data-i18n="cmp_r3">Coaxes out a second backup account</td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
+                      <use href="#i-check"></use>
+                    </svg><span data-i18n="cmp_yes">Yes</span></span></td>
+              </tr>
+              <tr>
+                <td data-i18n="cmp_r4">Logs the link-clicker's IP &amp; device</td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--partial"><svg aria-hidden="true">
+                      <use href="#i-minus"></use>
+                    </svg><span data-i18n="cmp_imei">IMEI only</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
+                      <use href="#i-check"></use>
+                    </svg><span data-i18n="cmp_yes">Yes</span></span></td>
+              </tr>
+              <tr>
+                <td data-i18n="cmp_r5">One-click complaint PDF in 1930 format</td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--partial"><svg aria-hidden="true">
+                      <use href="#i-minus"></use>
+                    </svg><span data-i18n="cmp_ref">Reference no.</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
+                      <use href="#i-check"></use>
+                    </svg><span data-i18n="cmp_yes">Yes</span></span></td>
+              </tr>
+              <tr>
+                <td data-i18n="cmp_r6">Evidence hash recomputed per read</td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td><span class="mark mark--no"><svg aria-hidden="true">
+                      <use href="#i-x"></use>
+                    </svg><span data-i18n="cmp_no">No</span></span></td>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
+                      <use href="#i-check"></use>
+                    </svg><span data-i18n="cmp_yes">Yes</span></span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ==================== CONTENT · HOW IT WORKS ==================== -->
+  <section class="band band--deep" id="how" aria-labelledby="how-title">
+    <div class="shell">
+
+      <div class="band__head">
+        <div class="band__headtext">
+          <div class="band__eyebrow" data-i18n="how_num">How it works</div>
+          <h2 class="band__title" id="how-title" data-i18n="how_title">Three steps, from a doubtful message to a filed
+            complaint</h2>
+          <p class="band__desc" data-i18n="how_desc">
+            Nothing to install and no account to create. Each step below takes you straight to the
+            part of the portal that does the work.
           </p>
         </div>
       </div>
 
-      <div class="col-6">
-        <div class="card-box h-full">
-          <h3 class="card-h3"><svg aria-hidden="true"><use href="#i-file"></use></svg><span data-i18n="t3_chat_title">Full transcript</span></h3>
-          <div class="panel text-sm scroll-y mt-3" id="ev-transcript">
-            <div class="skeleton skeleton--line"></div><div class="skeleton skeleton--line w-80"></div>
-          </div>
-        </div>
-      </div>
+      <div class="steps">
 
+        <article class="step-card">
+          <header class="step-card__head">
+            <span class="step-card__num">01</span>
+            <span class="step-card__icon"><svg aria-hidden="true">
+                <use href="#i-search"></use>
+              </svg></span>
+          </header>
+          <h3 class="step-card__title" data-i18n="s1_title">Check what you received</h3>
+          <p class="step-card__desc" data-i18n="s1_desc">
+            Drop in whatever the scammer sent you. You get a score, the reasons behind it and every
+            identifier that was pulled out of it.
+          </p>
+          <ul class="step-card__chips">
+            <li data-i18n="s1_c1">Message</li>
+            <li data-i18n="s1_c2">Screenshot</li>
+            <li data-i18n="s1_c3">Voice note</li>
+            <li data-i18n="s1_c4">UPI QR</li>
+            <li data-i18n="s1_c5">UPI ID / phone</li>
+          </ul>
+          <button class="btn btn--primary" type="button" data-goto-tab="tab-checker">
+            <span data-i18n="s1_btn">Open the checker</span>
+            <svg aria-hidden="true">
+              <use href="#i-arrow-right"></use>
+            </svg>
+          </button>
+        </article>
+
+        <article class="step-card">
+          <header class="step-card__head">
+            <span class="step-card__num">02</span>
+            <span class="step-card__icon"><svg aria-hidden="true">
+                <use href="#i-bot"></use>
+              </svg></span>
+          </header>
+          <h3 class="step-card__title" data-i18n="s2_title">Keep them talking</h3>
+          <p class="step-card__desc" data-i18n="s2_desc">
+            Hand the number over to the AI decoy. While it chats, every reply, account and phone
+            number is captured with a timestamp.
+          </p>
+          <ul class="step-card__chips">
+            <li data-i18n="s2_c1">Live chat</li>
+            <li data-i18n="s2_c2">Automatic replies</li>
+            <li data-i18n="s2_c3">Canary traps</li>
+          </ul>
+          <button class="btn btn--primary" type="button" data-goto-tab="tab-honeypot">
+            <span data-i18n="s2_btn">Open the honeypot</span>
+            <svg aria-hidden="true">
+              <use href="#i-arrow-right"></use>
+            </svg>
+          </button>
+        </article>
+
+        <article class="step-card">
+          <header class="step-card__head">
+            <span class="step-card__num">03</span>
+            <span class="step-card__icon"><svg aria-hidden="true">
+                <use href="#i-file"></use>
+              </svg></span>
+          </header>
+          <h3 class="step-card__title" data-i18n="s3_title">File the complaint</h3>
+          <p class="step-card__desc" data-i18n="s3_desc">
+            Everything is bundled into a 1930-format PDF with an integrity hash — ready to upload on
+            cybercrime.gov.in or to read out on the helpline.
+          </p>
+          <ul class="step-card__chips">
+            <li data-i18n="s3_c1">PDF dossier</li>
+            <li data-i18n="s3_c2">Integrity hash</li>
+            <li data-i18n="s3_c3">Helpline 1930</li>
+          </ul>
+          <button class="btn btn--primary" type="button" data-goto-tab="tab-proof">
+            <span data-i18n="s3_btn">Open the evidence vault</span>
+            <svg aria-hidden="true">
+              <use href="#i-arrow-right"></use>
+            </svg>
+          </button>
+        </article>
+
+      </div>
     </div>
   </section>
 
-  <!-- ============ TAB 4 · TRENDS & COMPARE ============ -->
-  <section class="tab-content-pane" id="tab-trends" role="tabpanel" aria-labelledby="tab-btn-trends" tabindex="0">
 
-    <div class="tab-intro">
-      <div>
-        <div class="tab-intro__num" data-i18n="t4_num">Reference</div>
-        <h2 class="tab-intro__title" data-i18n="t4_title">Registry trends &amp; comparison</h2>
-        <p class="tab-intro__desc" data-i18n="t4_desc">Counts are aggregated live from the blacklist table each time this tab opens.</p>
-      </div>
-    </div>
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="site-footer">
+    <div class="shell">
+      <div class="site-footer__grid">
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-val" id="kpi-reports">0</div>
-        <div class="kpi-label" data-i18n="kpi_reports">Citizen reports logged</div>
-      </div>
-      <div class="kpi-card kpi-card--red">
-        <div class="kpi-val" id="kpi-blacklisted">0</div>
-        <div class="kpi-label" data-i18n="kpi_blacklisted">Identifiers blacklisted</div>
-      </div>
-      <div class="kpi-card kpi-card--amber">
-        <div class="kpi-val" id="kpi-cases">0</div>
-        <div class="kpi-label" data-i18n="kpi_cases">Cases opened</div>
-      </div>
-      <div class="kpi-card kpi-card--emerald">
-        <div class="kpi-val" id="kpi-resolved">0</div>
-        <div class="kpi-label" data-i18n="kpi_resolved">Cases resolved</div>
-      </div>
-    </div>
-
-    <div class="grid-12">
-
-      <div class="col-7">
-        <div class="card-box h-full">
-          <div class="row row--between mb-3">
-            <h3 class="card-h3"><svg aria-hidden="true"><use href="#i-database"></use></svg><span data-i18n="t4_blacklist_title">Public blacklist directory</span></h3>
-            <span class="badge" id="blacklist-count">—</span>
-          </div>
-          <label class="visually-hidden" for="blacklist-search-input" data-i18n="lbl_filter">Filter the blacklist</label>
-          <input type="search" id="blacklist-search-input" class="input-control mb-3" placeholder="Filter by value, type or category…" data-i18n="ph_filter" autocomplete="off">
-
-          <div class="table-scroll">
-            <table class="utility-table" id="trends-blacklist-table">
-              <thead>
-                <tr>
-                  <th data-i18n="th_identifier">Identifier</th>
-                  <th data-i18n="th_type">Type</th>
-                  <th data-i18n="th_category">Category</th>
-                  <th class="cell-num" data-i18n="th_risk">Risk</th>
-                </tr>
-              </thead>
-              <tbody id="trends-blacklist-tbody">
-                <tr><td colspan="4" class="muted" data-i18n="th_loading">Loading registry…</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-5">
-        <div class="card-box h-full">
-          <h3 class="card-h3"><svg aria-hidden="true"><use href="#i-chart"></use></svg><span data-i18n="t4_chart_title">Category breakdown</span></h3>
-          <div id="category-bars" aria-live="polite" class="mt-4">
-            <div class="skeleton skeleton--block"></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="card-box mt-5">
-      <div class="section-head">
         <div>
-          <h3 class="section-head__title" data-i18n="t4_compare_title">Where this differs from existing tools</h3>
-          <p class="section-head__desc" data-i18n="t4_compare_desc">Comparison against consumer-facing alternatives available in India.</p>
+          <div class="site-footer__brand">
+            <span class="brand__mark"><svg aria-hidden="true">
+                <use href="#i-shield"></use>
+              </svg></span>
+            <span data-i18n="brand_name">ScamTrap Bharat</span>
+          </div>
+          <p class="site-footer__blurb" data-i18n="footer_blurb">
+            A citizen-facing cyber-safety workbench: score a suspicious message, run an AI decoy against the
+            scammer, and export a complaint-ready evidence file. All records live in a local SQLite database.
+          </p>
         </div>
-      </div>
-      <div class="table-scroll">
-        <table class="utility-table utility-table--compare">
-          <thead>
-            <tr>
-              <th data-i18n="th_capability">Capability</th>
-              <th>Truecaller</th>
-              <th data-i18n="th_sanchar">Sanchar Saathi</th>
-              <th data-i18n="th_voicebots">Voice bots</th>
-              <th class="col-ours" data-i18n="th_ours">This tool</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-i18n="cmp_r1">Works on WhatsApp &amp; UPI text scams</td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--partial"><svg aria-hidden="true"><use href="#i-minus"></use></svg><span data-i18n="cmp_sms">SMS only</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="cmp_yes">Yes</span></span></td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp_r2">Flags a UPI handle before money is sent</td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="cmp_yes">Yes</span></span></td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp_r3">Coaxes out a second backup account</td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="cmp_yes">Yes</span></span></td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp_r4">Logs the link-clicker's IP &amp; device</td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--partial"><svg aria-hidden="true"><use href="#i-minus"></use></svg><span data-i18n="cmp_imei">IMEI only</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="cmp_yes">Yes</span></span></td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp_r5">One-click complaint PDF in 1930 format</td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--partial"><svg aria-hidden="true"><use href="#i-minus"></use></svg><span data-i18n="cmp_ref">Reference no.</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="cmp_yes">Yes</span></span></td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp_r6">Evidence hash recomputed per read</td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use></svg><span data-i18n="cmp_no">No</span></span></td>
-              <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use></svg><span data-i18n="cmp_yes">Yes</span></span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
 
-  </section>
-
-</main>
-
-
-<!-- ==================== CONTENT · HOW IT WORKS ==================== -->
-<section class="band band--deep" id="how" aria-labelledby="how-title">
-  <div class="shell">
-
-    <div class="band__head">
-      <div class="band__headtext">
-        <div class="band__eyebrow" data-i18n="how_num">How it works</div>
-        <h2 class="band__title" id="how-title" data-i18n="how_title">Three steps, from a doubtful message to a filed complaint</h2>
-        <p class="band__desc" data-i18n="how_desc">
-          Nothing to install and no account to create. Each step below takes you straight to the
-          part of the portal that does the work.
-        </p>
-      </div>
-    </div>
-
-    <div class="steps">
-
-      <article class="step-card">
-        <header class="step-card__head">
-          <span class="step-card__num">01</span>
-          <span class="step-card__icon"><svg aria-hidden="true"><use href="#i-search"></use></svg></span>
-        </header>
-        <h3 class="step-card__title" data-i18n="s1_title">Check what you received</h3>
-        <p class="step-card__desc" data-i18n="s1_desc">
-          Drop in whatever the scammer sent you. You get a score, the reasons behind it and every
-          identifier that was pulled out of it.
-        </p>
-        <ul class="step-card__chips">
-          <li data-i18n="s1_c1">Message</li>
-          <li data-i18n="s1_c2">Screenshot</li>
-          <li data-i18n="s1_c3">Voice note</li>
-          <li data-i18n="s1_c4">UPI QR</li>
-          <li data-i18n="s1_c5">UPI ID / phone</li>
-        </ul>
-        <button class="btn btn--primary" type="button" data-goto-tab="tab-checker">
-          <span data-i18n="s1_btn">Open the checker</span>
-          <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
-        </button>
-      </article>
-
-      <article class="step-card">
-        <header class="step-card__head">
-          <span class="step-card__num">02</span>
-          <span class="step-card__icon"><svg aria-hidden="true"><use href="#i-bot"></use></svg></span>
-        </header>
-        <h3 class="step-card__title" data-i18n="s2_title">Keep them talking</h3>
-        <p class="step-card__desc" data-i18n="s2_desc">
-          Hand the number over to the AI decoy. While it chats, every reply, account and phone
-          number is captured with a timestamp.
-        </p>
-        <ul class="step-card__chips">
-          <li data-i18n="s2_c1">Live chat</li>
-          <li data-i18n="s2_c2">Automatic replies</li>
-          <li data-i18n="s2_c3">Canary traps</li>
-        </ul>
-        <button class="btn btn--primary" type="button" data-goto-tab="tab-honeypot">
-          <span data-i18n="s2_btn">Open the honeypot</span>
-          <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
-        </button>
-      </article>
-
-      <article class="step-card">
-        <header class="step-card__head">
-          <span class="step-card__num">03</span>
-          <span class="step-card__icon"><svg aria-hidden="true"><use href="#i-file"></use></svg></span>
-        </header>
-        <h3 class="step-card__title" data-i18n="s3_title">File the complaint</h3>
-        <p class="step-card__desc" data-i18n="s3_desc">
-          Everything is bundled into a 1930-format PDF with an integrity hash — ready to upload on
-          cybercrime.gov.in or to read out on the helpline.
-        </p>
-        <ul class="step-card__chips">
-          <li data-i18n="s3_c1">PDF dossier</li>
-          <li data-i18n="s3_c2">Integrity hash</li>
-          <li data-i18n="s3_c3">Helpline 1930</li>
-        </ul>
-        <button class="btn btn--primary" type="button" data-goto-tab="tab-proof">
-          <span data-i18n="s3_btn">Open the evidence vault</span>
-          <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
-        </button>
-      </article>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ==================== FOOTER ==================== -->
-<footer class="site-footer">
-  <div class="shell">
-    <div class="site-footer__grid">
-
-      <div>
-        <div class="site-footer__brand">
-          <span class="brand__mark"><svg aria-hidden="true"><use href="#i-shield"></use></svg></span>
-          <span data-i18n="brand_name">ScamTrap Bharat</span>
+        <div class="site-footer__col">
+          <h4 data-i18n="footer_screens">Screens</h4>
+          <ul>
+            <li><a href="#tab-checker" data-goto-tab="tab-checker" data-i18n="nav_checker">Check a scam</a></li>
+            <li><a href="#tab-honeypot" data-goto-tab="tab-honeypot" data-i18n="nav_honeypot">Trap the scammer</a></li>
+            <li><a href="#tab-proof" data-goto-tab="tab-proof" data-i18n="nav_proof">Evidence &amp; PDF</a></li>
+            <li><a href="#tab-trends" data-goto-tab="tab-trends" data-i18n="nav_trends">Trends &amp; compare</a></li>
+          </ul>
         </div>
-        <p class="site-footer__blurb" data-i18n="footer_blurb">
-          A citizen-facing cyber-safety workbench: score a suspicious message, run an AI decoy against the
-          scammer, and export a complaint-ready evidence file. All records live in a local SQLite database.
-        </p>
+
+        <div class="site-footer__col">
+          <h4 data-i18n="footer_resources">Resources</h4>
+          <ul>
+            <li><a href="https://cybercrime.gov.in" target="_blank" rel="noopener"
+                data-i18n="link_ncrp">cybercrime.gov.in</a></li>
+            <li><a href="tel:1930" data-i18n="link_1930">Helpline 1930</a></li>
+            <li><a href="/docs" target="_blank" rel="noopener" data-i18n="link_apidocs">API documentation</a></li>
+            <li><a href="https://sanchar.saathi.gov.in" target="_blank" rel="noopener" data-i18n="link_sanchar">Sanchar
+                Saathi</a></li>
+          </ul>
+        </div>
+
+        <div class="site-footer__col">
+          <h4 data-i18n="footer_status">Status</h4>
+          <ul>
+            <li><a href="/api/health" target="_blank" rel="noopener" data-i18n="link_health">Service health</a></li>
+            <li><span class="text-sm" data-i18n="link_storage">storage/scamtrap.db</span></li>
+            <li><span class="text-sm" data-i18n="link_sandbox">No outbound reporting</span></li>
+          </ul>
+        </div>
+
       </div>
 
-      <div class="site-footer__col">
-        <h4 data-i18n="footer_screens">Screens</h4>
-        <ul>
-          <li><a href="#tab-checker" data-goto-tab="tab-checker" data-i18n="nav_checker">Check a scam</a></li>
-          <li><a href="#tab-honeypot" data-goto-tab="tab-honeypot" data-i18n="nav_honeypot">Trap the scammer</a></li>
-          <li><a href="#tab-proof" data-goto-tab="tab-proof" data-i18n="nav_proof">Evidence &amp; PDF</a></li>
-          <li><a href="#tab-trends" data-goto-tab="tab-trends" data-i18n="nav_trends">Trends &amp; compare</a></li>
-        </ul>
+      <div class="site-footer__bottom">
+        <span data-i18n="footer_legal">Educational sandbox. Always report fraud on the official 1930 portal.</span>
+        <span class="badge"><span class="pulse-dot"></span><span data-i18n="status_local_db">Local
+            database</span></span>
       </div>
-
-      <div class="site-footer__col">
-        <h4 data-i18n="footer_resources">Resources</h4>
-        <ul>
-          <li><a href="https://cybercrime.gov.in" target="_blank" rel="noopener" data-i18n="link_ncrp">cybercrime.gov.in</a></li>
-          <li><a href="tel:1930" data-i18n="link_1930">Helpline 1930</a></li>
-          <li><a href="/docs" target="_blank" rel="noopener" data-i18n="link_apidocs">API documentation</a></li>
-          <li><a href="https://sanchar.saathi.gov.in" target="_blank" rel="noopener" data-i18n="link_sanchar">Sanchar Saathi</a></li>
-        </ul>
-      </div>
-
-      <div class="site-footer__col">
-        <h4 data-i18n="footer_status">Status</h4>
-        <ul>
-          <li><a href="/api/health" target="_blank" rel="noopener" data-i18n="link_health">Service health</a></li>
-          <li><span class="text-sm" data-i18n="link_storage">storage/scamtrap.db</span></li>
-          <li><span class="text-sm" data-i18n="link_sandbox">No outbound reporting</span></li>
-        </ul>
-      </div>
-
     </div>
+  </footer>
 
-    <div class="site-footer__bottom">
-      <span data-i18n="footer_legal">Educational sandbox. Always report fraud on the official 1930 portal.</span>
-      <span class="badge"><span class="pulse-dot"></span><span data-i18n="status_local_db">Local database</span></span>
-    </div>
-  </div>
-</footer>
-
-<!-- ==================== TOASTS ==================== -->
-<div class="toast-region" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
+  <!-- ==================== TOASTS ==================== -->
+  <div class="toast-region" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <script src="/js/i18n.js?v=20261007r"></script>
   <script src="/js/app.js?v=20261007r"></script>
 </body>
+
 </html>

@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function cacheDom() {
   [
-    'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region', 'hero-main',
+    'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region', 'hero-main', 'hero-honeypot',
     'quick-search-input', 'quick-search-btn', 'chip-scam-upi', 'chip-scam-msg',
     'scam-msg-input', 'analyze-msg-btn', 'btn-clear-tab1',
     'dropzone-box', 'scam-img-input',
@@ -195,8 +195,9 @@ function switchTab(targetId, scrollEl) {
 
   try { localStorage.setItem('stb_active_tab', targetId); } catch (e) { /* private mode */ }
 
-  // Hero + stats ledger only on Tab 1 (Checker).
+  // Hero + stats ledger on Tab 1 & Tab 2
   if (ui['hero-main']) ui['hero-main'].hidden = targetId !== 'tab-checker';
+  if (ui['hero-honeypot']) ui['hero-honeypot'].hidden = targetId !== 'tab-honeypot';
 
   ui['mobile-tablist'].classList.remove('is-open');
   ui['hamburger-btn'].setAttribute('aria-expanded', 'false');
@@ -210,7 +211,12 @@ function switchTab(targetId, scrollEl) {
     syncCaseGate();
   }
 
-  scrollToPane(scrollEl || document.getElementById(targetId));
+  if (scrollEl) {
+    scrollToPane(scrollEl);
+  } else {
+    // When switching tabs via navbar, start at top so user sees the hero section
+    smoothScrollTo(0);
+  }
 }
 
 /** Eased window scroll driven by rAF, so it animates regardless of
@@ -269,8 +275,8 @@ function initGlobalHandlers() {
   const hpScrollBtn = document.getElementById('hero-hp-scroll-btn');
   if (hpScrollBtn) {
     hpScrollBtn.addEventListener('click', () => {
-      const acc = document.getElementById('acc-btn-cloud') || document.getElementById('acc-btn-self');
-      if (acc) acc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const acc = document.getElementById('strategy-acc') || document.getElementById('acc-btn-copilot') || document.getElementById('tab-honeypot');
+      if (acc) scrollToPane(acc);
     });
   }
 
