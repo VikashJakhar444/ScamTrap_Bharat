@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261007z">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261008a">
   <style id="tab-boot"></style>
   <script>
     (function () {
@@ -1634,33 +1634,319 @@
 
       <div class="tab-intro">
         <div>
-          <div class="tab-intro__num" data-i18n="t4_num">Reference</div>
-          <h2 class="tab-intro__title" data-i18n="t4_title">Registry trends &amp; comparison</h2>
-          <p class="tab-intro__desc" data-i18n="t4_desc">Counts are aggregated live from the blacklist table each time
-            this tab opens.</p>
+          <div class="tab-intro__num" data-i18n="t4_num">The threat, in numbers</div>
+          <h2 class="tab-intro__title" data-i18n="t4_title">Cyber-fraud landscape — India &amp; the world</h2>
+          <p class="tab-intro__desc" data-i18n="t4_desc">Every figure below is sourced from official government
+            publications — I4C / MHA (India) and FBI IC3 (USA). No estimates, no guesses.</p>
         </div>
       </div>
 
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-val" id="kpi-reports">0</div>
-          <div class="kpi-label" data-i18n="kpi_reports">Citizen reports logged</div>
+      <!-- ── Hero KPI strip: the two headline numbers ────────────────────── -->
+      <div class="t4-hero-strip">
+        <div class="t4-hero-stat t4-hero-stat--in">
+          <span class="t4-hero-stat__flag" aria-hidden="true">🇮🇳</span>
+          <div class="t4-hero-stat__val">₹22,495<span class="t4-hero-stat__unit"> Cr</span></div>
+          <div class="t4-hero-stat__label" data-i18n="t4_in_loss">lost by Indians to cyber-fraud in 2025</div>
+          <div class="t4-hero-stat__sub" data-i18n="t4_in_loss_sub">28.15 lakh complaints · +24% cases vs 2024</div>
         </div>
-        <div class="kpi-card kpi-card--red">
-          <div class="kpi-val" id="kpi-blacklisted">0</div>
-          <div class="kpi-label" data-i18n="kpi_blacklisted">Identifiers blacklisted</div>
-        </div>
-        <div class="kpi-card kpi-card--amber">
-          <div class="kpi-val" id="kpi-cases">0</div>
-          <div class="kpi-label" data-i18n="kpi_cases">Cases opened</div>
-        </div>
-        <div class="kpi-card kpi-card--emerald">
-          <div class="kpi-val" id="kpi-resolved">0</div>
-          <div class="kpi-label" data-i18n="kpi_resolved">Cases resolved</div>
+        <div class="t4-hero-strip__div" aria-hidden="true"></div>
+        <div class="t4-hero-stat t4-hero-stat--us">
+          <span class="t4-hero-stat__flag" aria-hidden="true">🇺🇸</span>
+          <div class="t4-hero-stat__val">$20.9<span class="t4-hero-stat__unit"> B</span></div>
+          <div class="t4-hero-stat__label" data-i18n="t4_us_loss">reported to FBI IC3 in 2025</div>
+          <div class="t4-hero-stat__sub" data-i18n="t4_us_loss_sub">10.08 lakh complaints · +26% losses vs 2024</div>
         </div>
       </div>
 
-      <div class="grid-12">
+      <!-- ── India yearly trend + scam-type breakdown ────────────────────── -->
+      <div class="grid-12 mt-5">
+
+        <div class="col-7">
+          <div class="card-box h-full">
+            <div class="row row--between mb-2">
+              <h3 class="card-h3">
+                <svg aria-hidden="true"><use href="#i-chart"></use></svg>
+                <span data-i18n="t4_trend_title">India — losses reported per year</span>
+              </h3>
+              <span class="badge badge--source" data-i18n="t4_source_ncrp">Source: NCRP / I4C</span>
+            </div>
+            <p class="text-xs muted mb-4" data-i18n="t4_trend_note">Financial amount reported by citizens on the
+              National Cyber Crime Reporting Portal. FY 2025-26 is through 30 Jun 2026.</p>
+            <div class="t4-columns" id="t4-year-chart" role="img" aria-label="India cyber-fraud losses by year">
+              <!-- 2021 -->
+              <div class="t4-col">
+                <div class="t4-col__bar-wrap"><div class="t4-col__bar t4-col__bar--sm" style="--h:22%"></div></div>
+                <div class="t4-col__val">₹5.5<span class="t4-col__unit">K Cr</span></div>
+                <div class="t4-col__year">2021</div>
+              </div>
+              <div class="t4-col">
+                <div class="t4-col__bar-wrap"><div class="t4-col__bar t4-col__bar--sm" style="--h:40%"></div></div>
+                <div class="t4-col__val">₹10.3<span class="t4-col__unit">K Cr</span></div>
+                <div class="t4-col__year">2022</div>
+              </div>
+              <div class="t4-col">
+                <div class="t4-col__bar-wrap"><div class="t4-col__bar" style="--h:62%"></div></div>
+                <div class="t4-col__val">₹15.6<span class="t4-col__unit">K Cr</span></div>
+                <div class="t4-col__year">2023</div>
+              </div>
+              <div class="t4-col">
+                <div class="t4-col__bar-wrap"><div class="t4-col__bar" style="--h:91%"></div></div>
+                <div class="t4-col__val">₹22.8<span class="t4-col__unit">K Cr</span></div>
+                <div class="t4-col__year">2024</div>
+              </div>
+              <div class="t4-col">
+                <div class="t4-col__bar-wrap"><div class="t4-col__bar t4-col__bar--peak" style="--h:90%"></div></div>
+                <div class="t4-col__val">₹22.5<span class="t4-col__unit">K Cr</span></div>
+                <div class="t4-col__year">2025</div>
+              </div>
+              <div class="t4-col">
+                <div class="t4-col__bar-wrap"><div class="t4-col__bar t4-col__bar--partial" style="--h:38%"></div></div>
+                <div class="t4-col__val">₹11.2<span class="t4-col__unit">K Cr</span></div>
+                <div class="t4-col__year">25-26*</div>
+              </div>
+            </div>
+            <p class="text-xs muted mt-3" data-i18n="t4_trend_foot">* H1 only (Apr–Jun 2026). Full-year data pending
+              MHA release. ₹1 Cr = ₹10 million.</p>
+          </div>
+        </div>
+
+        <div class="col-5">
+          <div class="card-box h-full">
+            <div class="row row--between mb-2">
+              <h3 class="card-h3">
+                <svg aria-hidden="true"><use href="#i-zap"></use></svg>
+                <span data-i18n="t4_mix_title">What Indians lost to in 2025</span>
+              </h3>
+              <span class="badge badge--source" data-i18n="t4_source_mha">Source: MHA</span>
+            </div>
+            <p class="text-xs muted mb-4" data-i18n="t4_mix_note">Share of total ₹22,495 Cr lost, by fraud type.</p>
+            <div class="t4-donut-wrap">
+              <svg class="t4-donut" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="t4-donut__track" cx="60" cy="60" r="48" />
+                <!-- Investment 76% -->
+                <circle class="t4-donut__seg" cx="60" cy="60" r="48"
+                  stroke="#DC2626" stroke-dasharray="229.0 301.6" stroke-dashoffset="0" />
+                <!-- Digital Arrest 9% -->
+                <circle class="t4-donut__seg" cx="60" cy="60" r="48"
+                  stroke="#D97706" stroke-dasharray="27.1 301.6" stroke-dashoffset="-229.0" />
+                <!-- Sextortion 4% -->
+                <circle class="t4-donut__seg" cx="60" cy="60" r="48"
+                  stroke="#7C3AED" stroke-dasharray="12.1 301.6" stroke-dashoffset="-256.1" />
+                <!-- Other 11% -->
+                <circle class="t4-donut__seg" cx="60" cy="60" r="48"
+                  stroke="#64748B" stroke-dasharray="33.4 301.6" stroke-dashoffset="-268.2" />
+              </svg>
+              <div class="t4-donut__center">
+                <span class="t4-donut__pct">76%</span>
+                <span class="t4-donut__cat" data-i18n="t4_donut_center" data-i18n-html>Investment<br>fraud</span>
+              </div>
+            </div>
+            <ul class="t4-legend">
+              <li><span class="t4-legend__dot" style="background:#DC2626"></span>
+                <span data-i18n="t4_cat_invest">Investment / crypto scam</span><strong>76%</strong></li>
+              <li><span class="t4-legend__dot" style="background:#D97706"></span>
+                <span data-i18n="t4_cat_digital">Digital arrest</span><strong>9%</strong></li>
+              <li><span class="t4-legend__dot" style="background:#7C3AED"></span>
+                <span data-i18n="t4_cat_sextort">Sextortion</span><strong>4%</strong></li>
+              <li><span class="t4-legend__dot" style="background:#64748B"></span>
+                <span data-i18n="t4_cat_other">All other types</span><strong>11%</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Global snapshot: FBI IC3 2025 ───────────────────────────────── -->
+      <div class="card-box mt-5">
+        <div class="row row--between mb-2">
+          <h3 class="card-h3">
+            <svg aria-hidden="true"><use href="#i-globe"></use></svg>
+            <span data-i18n="t4_global_title">Global snapshot — FBI IC3 Annual Report 2025</span>
+          </h3>
+          <span class="badge badge--source" data-i18n="t4_source_ic3">Source: FBI IC3</span>
+        </div>
+        <p class="text-sm muted mb-4" data-i18n="t4_global_note" data-i18n-html>The FBI's Internet Crime Complaint Center received
+          over 10 lakh complaints from 200+ countries. India was the <strong>#2 foreign country</strong> by complaint
+          volume.</p>
+
+        <div class="t4-global-grid">
+          <div class="t4-gcard">
+            <div class="t4-gcard__val">$8.6B</div>
+            <div class="t4-gcard__label" data-i18n="t4_g_invest">Investment fraud</div>
+            <div class="t4-gcard__delta t4-gcard__delta--up" data-i18n="t4_g_invest_d">▲ 32% vs 2024</div>
+          </div>
+          <div class="t4-gcard">
+            <div class="t4-gcard__val">$7.2B</div>
+            <div class="t4-gcard__label" data-i18n="t4_g_crypto">Crypto investment</div>
+            <div class="t4-gcard__delta t4-gcard__delta--up" data-i18n="t4_g_crypto_d">▲ 24% vs 2024</div>
+          </div>
+          <div class="t4-gcard">
+            <div class="t4-gcard__val">$3.0B</div>
+            <div class="t4-gcard__label" data-i18n="t4_g_bec">Business email compromise</div>
+            <div class="t4-gcard__delta t4-gcard__delta--up" data-i18n="t4_g_bec_d">▲ 10% vs 2024</div>
+          </div>
+          <div class="t4-gcard">
+            <div class="t4-gcard__val">$7.7B</div>
+            <div class="t4-gcard__label" data-i18n="t4_g_seniors">Losses — age 60+</div>
+            <div class="t4-gcard__delta t4-gcard__delta--up" data-i18n="t4_g_seniors_d">▲ 37% vs 2024</div>
+          </div>
+          <div class="t4-gcard">
+            <div class="t4-gcard__val">$0.89B</div>
+            <div class="t4-gcard__label" data-i18n="t4_g_ai">AI-enabled fraud</div>
+            <div class="t4-gcard__delta t4-gcard__delta--new" data-i18n="t4_g_ai_d">First tracked in 2025</div>
+          </div>
+          <div class="t4-gcard t4-gcard--highlight">
+            <div class="t4-gcard__val">$0.80B</div>
+            <div class="t4-gcard__label" data-i18n="t4_g_india">Govt-impersonation calls from India</div>
+            <div class="t4-gcard__delta t4-gcard__delta--up" data-i18n="t4_g_india_d">▲ 97% vs 2024</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── India state hotspots ────────────────────────────────────────── -->
+      <div class="card-box mt-5">
+        <div class="row row--between mb-2">
+          <h3 class="card-h3">
+            <svg aria-hidden="true"><use href="#i-bank"></use></svg>
+            <span data-i18n="t4_state_title">India — cybercrime cases by state (2024)</span>
+          </h3>
+          <span class="badge badge--source" data-i18n="t4_source_ncrb">Source: NCRB Crime in India</span>
+        </div>
+        <p class="text-xs muted mb-4" data-i18n="t4_state_note">Cases registered under cyber crimes involving
+          communication devices. Top 8 states shown.</p>
+        <div class="t4-state-list" id="t4-state-list">
+          <div class="t4-state">
+            <span class="t4-state__rank">1</span>
+            <span class="t4-state__name">Telangana</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:100%"></div></div>
+            <span class="t4-state__val">27,230</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">2</span>
+            <span class="t4-state__name">Uttar Pradesh</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:40.7%"></div></div>
+            <span class="t4-state__val">11,073</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">3</span>
+            <span class="t4-state__name">Maharashtra</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:37.5%"></div></div>
+            <span class="t4-state__val">10,200</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">4</span>
+            <span class="t4-state__name">Karnataka</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:31.4%"></div></div>
+            <span class="t4-state__val">8,540</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">5</span>
+            <span class="t4-state__name">Delhi</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:22.8%"></div></div>
+            <span class="t4-state__val">6,210</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">6</span>
+            <span class="t4-state__name">Andhra Pradesh</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:17.2%"></div></div>
+            <span class="t4-state__val">4,680</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">7</span>
+            <span class="t4-state__name">Tamil Nadu</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:16.8%"></div></div>
+            <span class="t4-state__val">4,573</span>
+          </div>
+          <div class="t4-state">
+            <span class="t4-state__rank">8</span>
+            <span class="t4-state__name">Gujarat</span>
+            <div class="t4-state__bar-track"><div class="t4-state__bar" style="width:14.9%"></div></div>
+            <span class="t4-state__val">4,060</span>
+          </div>
+        </div>
+        <p class="text-xs muted mt-4" data-i18n="t4_state_foot">All-India total 2024: 1,01,928 cases registered
+          (NCRB). Actual financial-fraud complaints on NCRP were far higher (28.15 lakh) — most never become FIRs.</p>
+      </div>
+
+      <!-- ── India response: what the government is doing ────────────────── -->
+      <div class="grid-12 mt-5">
+        <div class="col-6">
+          <div class="card-box h-full t4-resp">
+            <h3 class="card-h3 mb-4">
+              <svg aria-hidden="true"><use href="#i-shield"></use></svg>
+              <span data-i18n="t4_resp_title">India's response — I4C / CFCFRMS</span>
+            </h3>
+            <div class="t4-resp__item">
+              <div class="t4-resp__num">₹11,158<span class="t4-resp__unit"> Cr</span></div>
+              <div class="t4-resp__desc" data-i18n="t4_resp_saved">saved by the 1930 helpline &amp; real-time bank
+                freezes (till Jun 2026)</div>
+            </div>
+            <div class="t4-resp__item">
+              <div class="t4-resp__num">32.8<span class="t4-resp__unit"> L</span></div>
+              <div class="t4-resp__desc" data-i18n="t4_resp_complaints">citizen complaints handled on CFCFRMS</div>
+            </div>
+            <div class="t4-resp__item">
+              <div class="t4-resp__num">₹25,698<span class="t4-resp__unit"> Cr</span></div>
+              <div class="t4-resp__desc" data-i18n="t4_resp_declined">fraudulent transactions declined via the
+                Suspect Registry (30.48 lakh identifiers shared with banks)</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="card-box h-full">
+            <h3 class="card-h3 mb-4">
+              <svg aria-hidden="true"><use href="#i-database"></use></svg>
+              <span data-i18n="t4_why_title">The gap ScamTrap fills</span>
+            </h3>
+            <p class="text-sm muted leading-relaxed" data-i18n="t4_why_desc" data-i18n-html>India's system is excellent at
+              <strong>post-facto recovery</strong> — freeze accounts after the money moves. But 76% of losses come
+              from <strong>investment scams</strong> where victims voluntarily send money over days or weeks, often
+              never realising it's fraud until it's too late. The 1930 helpline can't help if you don't know you're
+              being scammed.</p>
+            <p class="text-sm muted leading-relaxed mt-3" data-i18n="t4_why_desc2" data-i18n-html>ScamTrap attacks the problem
+              <strong>before</strong> the payment: an AI decoy that keeps the scammer engaged, extracts their mule
+              accounts, and generates a court-admissible evidence dossier — turning the victim from passive target
+              into active investigator.</p>
+            <div class="t4-tag-row mt-4">
+              <span class="badge badge--blue" data-i18n="t4_tag_pre">Pre-payment</span>
+              <span class="badge badge--blue" data-i18n="t4_tag_decoy">AI decoy</span>
+              <span class="badge badge--blue" data-i18n="t4_tag_evidence">Evidence dossier</span>
+              <span class="badge badge--blue" data-i18n="t4_tag_bsa">Section 63 BSA</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Local registry KPIs (live from DB) ──────────────────────────── -->
+      <div class="card-box mt-5">
+        <div class="row row--between mb-4">
+          <h3 class="card-h3">
+            <svg aria-hidden="true"><use href="#i-database"></use></svg>
+            <span data-i18n="t4_local_title">ScamTrap local registry</span>
+          </h3>
+          <span class="badge" data-i18n="t4_local_live">Live from database</span>
+        </div>
+        <div class="kpi-grid kpi-grid--4">
+          <div class="kpi-card">
+            <div class="kpi-val" id="kpi-reports">0</div>
+            <div class="kpi-label" data-i18n="kpi_reports">Citizen reports logged</div>
+          </div>
+          <div class="kpi-card kpi-card--red">
+            <div class="kpi-val" id="kpi-blacklisted">0</div>
+            <div class="kpi-label" data-i18n="kpi_blacklisted">Identifiers blacklisted</div>
+          </div>
+          <div class="kpi-card kpi-card--amber">
+            <div class="kpi-val" id="kpi-cases">0</div>
+            <div class="kpi-label" data-i18n="kpi_cases">Cases opened</div>
+          </div>
+          <div class="kpi-card kpi-card--emerald">
+            <div class="kpi-val" id="kpi-resolved">0</div>
+            <div class="kpi-label" data-i18n="kpi_resolved">Cases resolved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Blacklist + category breakdown ──────────────────────────────── -->
+      <div class="grid-12 mt-5">
 
         <div class="col-7">
           <div class="card-box h-full">
@@ -1708,6 +1994,7 @@
 
       </div>
 
+      <!-- ── Tool comparison ─────────────────────────────────────────────── -->
       <div class="card-box mt-5">
         <div class="section-head">
           <div>
@@ -1745,82 +2032,77 @@
               </tr>
               <tr>
                 <td data-i18n="cmp_r2">Flags a UPI handle before money is sent</td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
-                      <use href="#i-check"></use>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use>
                     </svg><span data-i18n="cmp_yes">Yes</span></span></td>
               </tr>
               <tr>
                 <td data-i18n="cmp_r3">Coaxes out a second backup account</td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
-                      <use href="#i-check"></use>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use>
                     </svg><span data-i18n="cmp_yes">Yes</span></span></td>
               </tr>
               <tr>
                 <td data-i18n="cmp_r4">Logs the link-clicker's IP &amp; device</td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--partial"><svg aria-hidden="true">
-                      <use href="#i-minus"></use>
+                <td><span class="mark mark--partial"><svg aria-hidden="true"><use href="#i-minus"></use>
                     </svg><span data-i18n="cmp_imei">IMEI only</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
-                      <use href="#i-check"></use>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use>
                     </svg><span data-i18n="cmp_yes">Yes</span></span></td>
               </tr>
               <tr>
                 <td data-i18n="cmp_r5">One-click complaint PDF in 1930 format</td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--partial"><svg aria-hidden="true">
-                      <use href="#i-minus"></use>
+                <td><span class="mark mark--partial"><svg aria-hidden="true"><use href="#i-minus"></use>
                     </svg><span data-i18n="cmp_ref">Reference no.</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
-                      <use href="#i-check"></use>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use>
                     </svg><span data-i18n="cmp_yes">Yes</span></span></td>
               </tr>
               <tr>
                 <td data-i18n="cmp_r6">Evidence hash recomputed per read</td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td><span class="mark mark--no"><svg aria-hidden="true">
-                      <use href="#i-x"></use>
+                <td><span class="mark mark--no"><svg aria-hidden="true"><use href="#i-x"></use>
                     </svg><span data-i18n="cmp_no">No</span></span></td>
-                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true">
-                      <use href="#i-check"></use>
+                <td class="col-ours"><span class="mark mark--yes"><svg aria-hidden="true"><use href="#i-check"></use>
                     </svg><span data-i18n="cmp_yes">Yes</span></span></td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- ── Data sources footer ─────────────────────────────────────────── -->
+      <div class="t4-sources mt-5">
+        <h4 class="t4-sources__title" data-i18n="t4_sources_title">Data sources</h4>
+        <ul class="t4-sources__list">
+          <li data-i18n="t4_src1">India yearly losses, complaint counts, fraud-type mix — Ministry of Home Affairs,
+            Lok Sabha &amp; Rajya Sabha starred questions (Jul 2026), sourced from NCRP / CFCFRMS / I4C.</li>
+          <li data-i18n="t4_src2">State-wise cybercrime cases (2020–2024) — National Crime Records Bureau,
+            "Crime in India" report, published via PIB (Jul 2026).</li>
+          <li data-i18n="t4_src3">Global losses, complaint counts, crime-type breakdown, AI-fraud figures — FBI
+            Internet Crime Complaint Center (IC3), 2025 Internet Crime Report (Apr 2026).</li>
+          <li data-i18n="t4_src4">Suspect Registry &amp; SIM/IMEI blocking figures — I4C, MHA press release
+            (28 Jul 2026).</li>
+        </ul>
       </div>
 
     </section>
@@ -1829,7 +2111,7 @@
 
 
   <!-- ==================== CONTENT · HOW IT WORKS ==================== -->
-  <section class="band band--deep" id="how" aria-labelledby="how-title">
+  <section class="band band--deep" id="how-band" aria-labelledby="how-title">
     <div class="shell">
 
       <div class="band__head">
@@ -1990,8 +2272,8 @@
   <!-- ==================== TOASTS ==================== -->
   <div class="toast-region" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="/js/i18n.js?v=20261007z"></script>
-  <script src="/js/app.js?v=20261007z"></script>
+  <script src="/js/i18n.js?v=20261008a"></script>
+  <script src="/js/app.js?v=20261008a"></script>
 </body>
 
 </html>

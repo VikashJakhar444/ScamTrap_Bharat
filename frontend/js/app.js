@@ -133,6 +133,7 @@ function cacheDom() {
     'kpi-reports', 'kpi-blacklisted', 'kpi-cases', 'kpi-resolved',
     'blacklist-search-input', 'trends-blacklist-tbody', 'blacklist-count',
     'category-bars',
+    'how-band',
     'analyze-label', 'bait-label', 'chat-status-text'
   ].forEach((id) => { ui[id] = document.getElementById(id); });
 }
@@ -198,6 +199,8 @@ function initTabs() {
 }
 
 function switchTab(targetId, scrollEl) {
+  const howBand = ui['how-band'];
+
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     const active = tab.dataset.tab === targetId;
     tab.setAttribute('aria-selected', String(active));
@@ -226,6 +229,11 @@ function switchTab(targetId, scrollEl) {
     seedThread();
     syncCaseGate();
   }
+
+  // The "How it works" band lives outside the tab panes (it's a global band
+  // below </main>).  It only makes sense on the workflow tabs — hide it on
+  // the data/statistics tab so Trends reads as a pure reference page.
+  if (howBand) howBand.hidden = targetId === 'tab-trends';
 
   if (scrollEl) {
     requestAnimationFrame(() => {
@@ -2385,7 +2393,7 @@ function renderCategoryBars(categories) {
   const remainder = categories.slice(6);
   if (remainder.length) {
     ordered.push({
-      scam_category: t('th_category'),
+      scam_category: t('chart_other'),
       count: remainder.reduce((s, c) => s + (Number(c.count) || 0), 0)
     });
   }
