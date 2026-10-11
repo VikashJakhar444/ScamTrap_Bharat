@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261007s">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261007z">
   <style id="tab-boot"></style>
   <script>
     (function () {
@@ -25,6 +25,7 @@
             '#tab-checker{display:none!important}#' + t +
             '{display:block!important}#hero-main{display:none!important}' +
             (t === 'tab-honeypot' ? '#hero-honeypot{display:flex!important}' : '') +
+            (t === 'tab-proof' ? '#hero-proof{display:flex!important}' : '') +
             // Desktop navbar: flip aria-selected
             '#desktop-tablist [data-tab="tab-checker"][role="tab"]{' +
             'background:none;color:var(--slate-600)!important;box-shadow:none!important;font-weight:600!important}' +
@@ -471,6 +472,79 @@
         <div class="ledger-cell">
           <span class="ledger-cell__val">1930</span>
           <span class="ledger-cell__label" data-i18n="t2_kpi_4">Compliant cyber-complaint dossier ready</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAB 3 HERO · EVIDENCE ==================== -->
+  <section class="hero hero--tab hero--proof" id="hero-proof" hidden>
+    <div class="shell hero__inner hero__inner--split">
+      <div class="hero__copy">
+        <span class="hero__eyebrow">
+          <svg aria-hidden="true">
+            <use href="#i-file"></use>
+          </svg>
+          <span data-i18n="t3_hero_eyebrow">Your complaint report</span>
+        </span>
+
+        <h1 class="display hero__title" data-i18n="t3_hero_title" data-i18n-html>Your report is <em>ready.</em></h1>
+
+        <p class="lede hero__lede" id="t3-hero-lede" data-i18n="t3_hero_lede">
+          Download the PDF and file it on 1930 or cybercrime.gov.in. Everything below is read from your case
+          file.
+        </p>
+
+        <div class="hero__cta">
+          <a class="btn btn--white btn--xl" id="hero-proof-pdf" href="/api/reports/download-pdf?case_id=CASE-2026-1001"
+            target="_blank" rel="noopener">
+            <svg aria-hidden="true">
+              <use href="#i-download"></use>
+            </svg>
+            <span data-i18n="btn_dl_pdf">Download complaint PDF</span>
+          </a>
+          <button class="btn btn--on-navy btn--lg" type="button" id="hero-proof-freeze">
+            <svg aria-hidden="true">
+              <use href="#i-send"></use>
+            </svg>
+            <span data-i18n="btn_freeze_request">Email freeze request to bank</span>
+          </button>
+        </div>
+
+        <p class="hero__sub" id="t3-hero-sub"></p>
+      </div>
+
+      <!-- Visual: floating PDF preview mockup -->
+      <div class="hero__doc" aria-hidden="true">
+        <div class="hero-doc">
+          <div class="hero-doc__page">
+            <div class="hero-doc__seal">
+              <svg><use href="#i-shield"></use></svg>
+              <span>Section 63 · BSA</span>
+            </div>
+            <div class="hero-doc__hdr">
+              <span class="hero-doc__brand">ScamTrap Bharat</span>
+              <span class="hero-doc__case mono" id="hero-doc-case">CASE-2026-1001</span>
+            </div>
+            <div class="hero-doc__title">Cyber Fraud Complaint</div>
+            <div class="hero-doc__lines">
+              <span class="hero-doc__line hero-doc__line--w90"></span>
+              <span class="hero-doc__line hero-doc__line--w70"></span>
+              <span class="hero-doc__line hero-doc__line--w80"></span>
+              <span class="hero-doc__line hero-doc__line--w55"></span>
+            </div>
+            <div class="hero-doc__table">
+              <div class="hero-doc__trow"><span>UPI / Phone</span><span class="hero-doc__dots"></span></div>
+              <div class="hero-doc__trow"><span>Bank / IFSC</span><span class="hero-doc__dots"></span></div>
+              <div class="hero-doc__trow"><span>Transcript</span><span class="hero-doc__dots"></span></div>
+            </div>
+            <div class="hero-doc__hash mono" id="hero-doc-hash">SHA-256 …</div>
+            <div class="hero-doc__stamp">
+              <svg><use href="#i-check"></use></svg>
+              <span>Hash-sealed</span>
+            </div>
+          </div>
+          <div class="hero-doc__shadow"></div>
         </div>
       </div>
     </div>
@@ -1391,100 +1465,169 @@
     <!-- ============ TAB 3 · EVIDENCE & PDF ============ -->
     <section class="tab-content-pane" id="tab-proof" role="tabpanel" aria-labelledby="tab-btn-proof" tabindex="0">
 
-      <div class="tab-intro">
-        <div>
-          <div class="tab-intro__num" data-i18n="t3_num">Step 03</div>
-          <h2 class="tab-intro__title" data-i18n="t3_title">Evidence dossier</h2>
-          <p class="tab-intro__desc" data-i18n="t3_desc">Everything below is read back from the local database. Fields
-            that have not actually been captured show as pending rather than a placeholder value.</p>
+      <!-- Case switcher (compact) -->
+      <div class="case-id-bar" id="case-id-bar">
+        <div class="case-id-bar__left">
+          <label class="case-id-bar__picker-label" for="ev-case-picker" data-i18n="t3_case_picker">Case file</label>
+          <select id="ev-case-picker" class="case-id-bar__picker" aria-label="Select case"></select>
+          <span class="case-id-bar__id mono" id="banner-case-id">—</span>
+          <span class="badge badge--red" id="ev-threat-badge" hidden></span>
+          <span class="badge" id="ev-category-badge" hidden></span>
         </div>
-      </div>
-
-      <div class="case-banner">
-        <div>
-          <div class="case-banner__eyebrow" data-i18n="t3_eyebrow">Cybercrime complaint evidence file · NCRP 1930 format
-          </div>
-          <div class="case-banner__title" id="banner-case-id">CASE-2026-1001</div>
-          <div class="case-banner__meta" id="banner-hash">SHA-256: calculating…</div>
+        <div class="case-id-bar__right">
+          <button class="btn btn--ghost btn--sm" type="button" id="ev-copy-hash" title="Copy SHA-256">
+            <svg aria-hidden="true"><use href="#i-copy"></use></svg>
+            <span class="mono text-xs" id="banner-hash">SHA-256: —</span>
+          </button>
         </div>
-        <a href="/api/reports/download-pdf?case_id=CASE-2026-1001" class="btn btn--danger btn--lg"
-          id="btn-download-pdf-main" target="_blank" rel="noopener">
-          <svg aria-hidden="true">
-            <use href="#i-download"></use>
-          </svg>
-          <span data-i18n="btn_dl_pdf">Download 1930 complaint PDF</span>
-        </a>
       </div>
 
       <div class="grid-12" id="evidence-grid" aria-live="polite">
 
-        <div class="col-6">
-          <div class="card-box h-full">
+        <!-- Payment details — the one thing a normal user cares about -->
+        <div class="col-12">
+          <div class="card-box">
             <div class="row row--between mb-4">
-              <h3 class="card-h3"><svg aria-hidden="true">
-                  <use href="#i-zap"></use>
-                </svg><span data-i18n="t3_upi_title">UPI handles</span></h3>
+              <h3 class="card-h3">
+                <svg aria-hidden="true"><use href="#i-bank"></use></svg>
+                <span data-i18n="t3_pay_title">Payment details found</span>
+              </h3>
               <button class="btn btn--ghost btn--sm" type="button" data-copy-target="ev-upi-list">
-                <svg aria-hidden="true">
-                  <use href="#i-copy"></use>
-                </svg><span data-i18n="btn_copy">Copy</span>
+                <svg aria-hidden="true"><use href="#i-copy"></use></svg>
+                <span data-i18n="btn_copy">Copy</span>
               </button>
             </div>
-            <div id="ev-upi-list">
-              <div class="skeleton skeleton--line"></div>
-              <div class="skeleton skeleton--line w-60"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="card-box h-full">
-            <div class="row row--between mb-4">
-              <h3 class="card-h3"><svg aria-hidden="true">
-                  <use href="#i-bank"></use>
-                </svg><span data-i18n="t3_bank_title">Bank accounts &amp; IFSC</span></h3>
-              <button class="btn btn--ghost btn--sm" type="button" data-copy-target="ev-bank-list">
-                <svg aria-hidden="true">
-                  <use href="#i-copy"></use>
-                </svg><span data-i18n="btn_copy">Copy</span>
-              </button>
-            </div>
-            <div id="ev-bank-list">
-              <div class="skeleton skeleton--line"></div>
-              <div class="skeleton skeleton--line w-60"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="card-box h-full">
-            <h3 class="card-h3"><svg aria-hidden="true">
-                <use href="#i-globe"></use>
-              </svg><span data-i18n="t3_device_title">Canary capture (device &amp; network)</span></h3>
-            <div id="ev-device" class="mt-3">
-              <div class="skeleton skeleton--line"></div>
-              <div class="skeleton skeleton--line" style="width:75%"></div>
-            </div>
-            <p class="text-xs muted mt-3 leading-snug" data-i18n="t3_device_note">
-              Populated only when the trap link is opened. Until then this panel stays pending.
+            <p class="text-sm muted mb-4" data-i18n="t3_pay_note">
+              These are the UPI IDs, bank accounts and phone numbers the scammer used. Include them in your
+              complaint.
             </p>
+            <div class="pay-grid">
+              <div>
+                <div class="pay-grid__label" data-i18n="t3_pay_upi">UPI &amp; phone</div>
+                <div id="ev-upi-list">
+                  <div class="skeleton skeleton--line"></div>
+                </div>
+              </div>
+              <div>
+                <div class="pay-grid__label" data-i18n="t3_pay_bank">Bank &amp; IFSC</div>
+                <div id="ev-bank-list">
+                  <div class="skeleton skeleton--line"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="col-6">
-          <div class="card-box h-full">
-            <h3 class="card-h3"><svg aria-hidden="true">
-                <use href="#i-file"></use>
-              </svg><span data-i18n="t3_chat_title">Full transcript</span></h3>
-            <div class="panel text-sm scroll-y mt-3" id="ev-transcript">
+        <!-- Collapsible: conversation -->
+        <div class="col-12">
+          <details class="disclose">
+            <summary class="disclose__summary">
+              <svg aria-hidden="true"><use href="#i-file"></use></svg>
+              <span data-i18n="t3_chat_title">Full conversation</span>
+              <span class="disclose__count" id="ev-msg-count"></span>
+              <svg class="disclose__chev" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="disclose__body" id="ev-transcript">
               <div class="skeleton skeleton--line"></div>
-              <div class="skeleton skeleton--line w-80"></div>
             </div>
-          </div>
+          </details>
+        </div>
+
+        <!-- Collapsible: trap link + device capture -->
+        <div class="col-12">
+          <details class="disclose">
+            <summary class="disclose__summary">
+              <svg aria-hidden="true"><use href="#i-globe"></use></svg>
+              <span data-i18n="t3_device_title">Trap link &amp; device capture</span>
+              <svg class="disclose__chev" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="disclose__body">
+              <div id="ev-device">
+                <div class="skeleton skeleton--line"></div>
+              </div>
+              <div class="mt-3" id="ev-trap-link-wrap" hidden>
+                <a class="btn btn--ghost btn--sm" id="ev-trap-link" href="#" target="_blank" rel="noopener">
+                  <svg aria-hidden="true"><use href="#i-send"></use></svg>
+                  <span data-i18n="t3_open_trap">Open trap link</span>
+                </a>
+                <p class="text-xs muted mt-2 leading-snug" data-i18n="t3_trap_note">
+                  Opens the bait receipt page. If the scammer opens it from their phone, their device details
+                  get logged here.
+                </p>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Collapsible: technical details (kill-chain + hash) -->
+        <div class="col-12">
+          <details class="disclose">
+            <summary class="disclose__summary">
+              <svg aria-hidden="true"><use href="#i-zap"></use></svg>
+              <span data-i18n="t3_tech_title">Technical details</span>
+              <svg class="disclose__chev" aria-hidden="true"><use href="#i-chevron"></use></svg>
+            </summary>
+            <div class="disclose__body">
+              <p class="text-xs muted mb-3 leading-snug" data-i18n="t3_funnel_note">
+                How the conversation progressed, classified automatically from the messages.
+              </p>
+              <div id="ev-funnel">
+                <div class="skeleton skeleton--line"></div>
+              </div>
+            </div>
+          </details>
         </div>
 
       </div>
+
     </section>
+
+    <!-- ============ FREEZE REQUEST MODAL (Tab 3) ============ -->
+    <div class="m2-modal is-hidden" id="freeze-modal" role="dialog" aria-modal="true" aria-labelledby="freeze-modal-title">
+      <div class="m2-modal__backdrop" id="freeze-modal-backdrop"></div>
+      <div class="m2-modal__panel m2-modal__panel--freeze">
+        <header class="m2-modal__head">
+          <div>
+            <span class="m2-modal__kicker" data-i18n="t3_freeze_modal_kicker">Freeze request</span>
+            <h3 class="m2-modal__title" id="freeze-modal-title" data-i18n="t3_freeze_modal_title">Email draft ready</h3>
+          </div>
+          <button class="m2-modal__close" id="btn-freeze-modal-close" type="button" aria-label="Close">
+            <svg aria-hidden="true">
+              <use href="#i-x"></use>
+            </svg>
+          </button>
+        </header>
+
+        <div class="m2-modal__body">
+          <p class="text-sm muted mb-4" data-i18n="t3_freeze_modal_note">
+            Copy this draft and paste it into your email (Gmail, Yahoo, etc.). Fill in the bank's nodal officer
+            email in the To field, then send. Or open it directly in your mail app.
+          </p>
+
+          <div class="freeze-fields">
+            <div class="freeze-field">
+              <span class="freeze-field__label" data-i18n="t3_freeze_field_subject">Subject</span>
+              <div class="freeze-field__value mono" id="freeze-subject"></div>
+            </div>
+            <div class="freeze-field freeze-field--body">
+              <span class="freeze-field__label" data-i18n="t3_freeze_field_body">Email body</span>
+              <pre class="freeze-body" id="freeze-body"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="m2-modal__foot m2-modal__foot--split">
+          <a class="btn btn--ghost" id="freeze-open-mail" href="#" target="_blank" rel="noopener">
+            <svg aria-hidden="true"><use href="#i-send"></use></svg>
+            <span data-i18n="t3_freeze_open_app">Open in mail app</span>
+          </a>
+          <button class="btn btn--primary" id="btn-freeze-copy" type="button">
+            <svg aria-hidden="true"><use href="#i-copy"></use></svg>
+            <span data-i18n="t3_freeze_copy">Copy email draft</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ============ TAB 4 · TRENDS & COMPARE ============ -->
     <section class="tab-content-pane" id="tab-trends" role="tabpanel" aria-labelledby="tab-btn-trends" tabindex="0">
@@ -1847,8 +1990,8 @@
   <!-- ==================== TOASTS ==================== -->
   <div class="toast-region" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="/js/i18n.js?v=20261007r"></script>
-  <script src="/js/app.js?v=20261007r"></script>
+  <script src="/js/i18n.js?v=20261007z"></script>
+  <script src="/js/app.js?v=20261007z"></script>
 </body>
 
 </html>

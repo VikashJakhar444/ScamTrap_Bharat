@@ -1,10 +1,13 @@
 """
 ScamTrap Bharat — Case Logger  (spec §6)
-=========================================
+========================================
 Writes the forensic record of every Tab 1 investigation:
 
-    storage/investigation_logs/INV-YYYYMMDD-HHMMSS-XXXX.log
-    storage/investigation_logs/INV-YYYYMMDD-HHMMSS-XXXX.json
+    storage_private/investigation_logs/INV-YYYYMMDD-HHMMSS-XXXX.log
+    storage_private/investigation_logs/INV-YYYYMMDD-HHMMSS-XXXX.json
+
+These live OUTSIDE `storage/` on purpose: nothing under `storage_private/`
+is ever mounted or statically served.
 
 Format  : INV-YYYYMMDD-HHMMSS-<4 hex>   (e.g. INV-20261006-142530-A7F3)
 Sections: exactly five, in order
@@ -30,7 +33,7 @@ from typing import Any, Dict, List, Optional
 from backend.config import BASE_DIR
 from backend.database.db import record_investigation_audit
 
-INVESTIGATION_LOG_DIR = BASE_DIR / "storage" / "investigation_logs"
+INVESTIGATION_LOG_DIR = BASE_DIR / "storage_private" / "investigation_logs"
 IST = timezone(timedelta(hours=5, minutes=30), name="IST")
 
 INPUT_TYPES = ("TEXT", "IMAGE_OCR", "VOICE_AUDIO", "QR_CODE", "IDENTIFIER_LOOKUP")

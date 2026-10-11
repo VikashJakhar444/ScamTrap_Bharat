@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from backend.config import BASE_DIR, STORAGE_DIR, SANDBOX_MODE
+from backend.config import (
+    BASE_DIR, STORAGE_DIR, SANDBOX_MODE,
+    GENERATED_BAITS_DIR, GENERATED_PDFS_DIR,
+)
 from backend.database.db import init_db
 from backend.routes.checker import router as checker_router
 from backend.routes.reports import router as reports_router
@@ -18,12 +21,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS
+# CORS: same-origin app (frontend is served by this process). No wildcard.
+_app_port = int(os.getenv("PORT", "8050"))
+_allowed_origins = [
+    f"http://127.0.0.1:{_app_port}",
+    f"http://localhost:{_app_port}",
+    f"http://127.0.0.1:{_app_port + 2000}",
+    f"http://localhost:{_app_port + 2000}",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=_allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -64,8 +74,11 @@ def health_check():
         "local_ai": ai
     }
 
-# Mount Storage Directory for Generated Baits & PDFs
-app.mount("/storage", StaticFiles(directory=str(STORAGE_DIR)), name="storage")
+# Mount ONLY the generated bait / PDF directories. The whole `storage/`
+# tree also contains scamtrap.db and forensic investigation logs — those
+# must never be statically served.
+app.mount("/storage/generated_baits", StaticFiles(directory=str(GENERATED_BAITS_DIR)), name="baits")
+app.mount("/storage/generated_pdfs", StaticFiles(directory=str(GENERATED_PDFS_DIR)), name="pdfs")
 
 # Mount Frontend Static Assets
 FRONTEND_DIR = BASE_DIR / "frontend"

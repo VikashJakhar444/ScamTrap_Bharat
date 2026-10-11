@@ -32,7 +32,9 @@ Thumbs.db
 # Per-run investigation logs (generated at runtime)
 storage/investigation_logs/
 storage/logs/
+storage_private/
 
 # WhatsApp bridge auth & cache
 .wwebjs_auth/
 whatsapp-bridge/.wwebjs_auth/
+

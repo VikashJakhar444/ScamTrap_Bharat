@@ -37,6 +37,27 @@ from backend.config import GEMINI_API_KEY, GEMINI_MODEL, GEMINI_MODEL_FALLBACKS
 router = APIRouter(prefix="/api/checker", tags=["Scam Checker"])
 
 MAX_TEXT_CHARS = 5000
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024   # 10 MB — enforced while streaming
+
+# ── In-memory rate limiter (fixed window per client IP) ────────────────────────
+# Cheap, process-local, no extra dependency. Returns 429 instead of silently
+# flagging the probe — this is what actually stops quota-burning abuse of the
+# Gemini vision / speech endpoints.
+import collections
+_RATE_WINDOW_S = 60
+_RATE_MAX = int(__import__("os").getenv("CHECKER_RATE_MAX", "20"))
+_rate_buckets: "collections.deque" = collections.deque()
+
+
+def _rate_limit(request: Request, bucket: str = "analyze") -> None:
+    now = time.time()
+    client = _client_ip(request)
+    while _rate_buckets and now - _rate_buckets[0][0] > _RATE_WINDOW_S:
+        _rate_buckets.popleft()
+    mine = sum(1 for t, c, b in _rate_buckets if c == client and b == bucket)
+    if mine >= _RATE_MAX:
+        raise HTTPException(status_code=429, detail="Too many requests — wait a minute and try again.")
+    _rate_buckets.append((now, client, bucket))
 
 # Vision / speech model — walks the same candidate list as the detective.
 _MODEL = GEMINI_MODEL
@@ -209,6 +230,7 @@ def analyze_scam_deep(req: AnalyzeRequest, request: Request):
     Runs the complete investigation engine on the submitted text.
     Returns layer-by-layer breakdown + final verdict + forensic log path.
     """
+    _rate_limit(request, "analyze")
     query_text = _guard_text(req.query)
     lang = "hi" if req.lang == "hi" else "en"
 
@@ -440,7 +462,7 @@ def _looks_like_qr_payload(text: str) -> bool:
     low = value.lower()
     if any(low.startswith(s) for s in _QR_SCHEMES):
         return True
-    # Bare VPA on a single token, e.g. bijli.board.pay@ybl — no sentence.
+    # Bare VPA on a single token, e.g. apcol.bijli.bill@ybl — no sentence.
     if "\n" not in value and " " not in value and "@" in value:
         local, _, domain = value.partition("@")
         return bool(local) and "." in domain
@@ -463,8 +485,22 @@ def _gemini_audio_text(payload: bytes, fmt: str = "MP3") -> Optional[str]:
 
 
 def _upload_or_reject(file: UploadFile, kind: str) -> tuple:
-    """Returns (payload, validation, exec_disguise) or raises 413/415."""
-    payload = file.file.read()
+    """Returns (payload, validation, exec_disguise) or raises 413/415.
+
+    Reads the body in 64 KB chunks and aborts as soon as the cap is
+    exceeded — a 2 GB POST can no longer OOM the worker before the
+    size check ever runs."""
+    chunks = []
+    total = 0
+    while True:
+        chunk = file.file.read(65536)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File too large (max 10 MB).")
+        chunks.append(chunk)
+    payload = b"".join(chunks)
     validation = guard.validate_upload(file.filename or "", payload, kind)
     if not validation["ok"]:
         status = 413 if "large" in validation["reason"].lower() else 415
@@ -483,6 +519,7 @@ def analyze_image(request: Request,
                   file: UploadFile = File(...),
                   lang: str = Form("en")):
     """INPUT_MODE 3 — screenshot / photo upload (magic-byte check, QR, OCR)."""
+    _rate_limit(request, "upload")
     payload, validation, exec_flag = _upload_or_reject(file, "image")
 
     # Offline pass first (free, ~50 ms). Only pay for vision when it misses.
@@ -533,6 +570,7 @@ def analyze_audio(request: Request,
                   file: UploadFile = File(...),
                   lang: str = Form("en")):
     """INPUT_MODE 4 — voice note / call recording upload."""
+    _rate_limit(request, "upload")
     payload, validation, exec_flag = _upload_or_reject(file, "audio")
 
     transcript = _gemini_audio_text(payload, validation.get("format", "MP3"))
@@ -561,6 +599,7 @@ class QRRequest(BaseModel):
 @router.post("/analyze-qr")
 def analyze_qr(req: QRRequest, request: Request):
     """INPUT_MODE 5 — a raw UPI QR payload pasted or decoded as text."""
+    _rate_limit(request, "analyze")
     text = (req.payload or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="QR payload cannot be empty.")

@@ -11,19 +11,24 @@ import uuid
 router = APIRouter(prefix="/api/co-pilot", tags=["Citizen Co-Pilot"])
 
 class GenerateBaitRequest(BaseModel):
-    scammer_upi: Optional[str] = "bijli.board.pay@ybl"
+    scammer_upi: Optional[str] = "apcol.bijli.bill@ybl"
     amount: Optional[str] = "25,000"
     sender_name: Optional[str] = "Rahul Sharma"
     case_id: Optional[str] = "CASE-2026-1001"
 
 @router.get("/fake-receipt")
 def get_fake_receipt(
-    upi: str = Query(default="bijli.board.pay@ybl"),
+    upi: str = Query(default="apcol.bijli.bill@ybl"),
     amount: str = Query(default="25,000"),
     sender_name: str = Query(default="Rahul Sharma"),
-    case_id: str = Query(default="CASE-2026-1001")
+    case_id: str = Query(default="CASE-2026-1001"),
+    case: Optional[str] = Query(default=None),
 ):
-    """Generates and directly returns the PNG image for the fake Payment Failed receipt."""
+    """Generates and directly returns the PNG image for the fake Payment Failed receipt.
+
+    `case` is a legacy alias for `case_id`."""
+    if case and not case_id:
+        case_id = case
     result = generate_upi_limit_receipt(scammer_upi=upi, amount=amount, sender_name=sender_name)
     return FileResponse(result["filepath"], media_type="image/png", filename=result["filename"])
 
@@ -32,7 +37,7 @@ def get_fake_receipt(
 def create_receipt_bait(req: GenerateBaitRequest):
     """Generates a realistic UPI Daily Limit Reached screenshot and ready-to-copy Hinglish text."""
     result = generate_upi_limit_receipt(
-        scammer_upi=req.scammer_upi or "bijli.board.pay@ybl",
+        scammer_upi=req.scammer_upi or "apcol.bijli.bill@ybl",
         amount=req.amount or "25,000",
         sender_name=(req.sender_name or "").strip() or "Rahul Sharma",
     )
@@ -45,8 +50,8 @@ def create_receipt_bait(req: GenerateBaitRequest):
         "bait_image": result,
         "trap_code": trap_code,
         "trap_url": trap_url,
-        "recommended_text_english": f"Sir, I tried sending ₹{req.amount or '25,000'} via UPI but my bank says 'NPCI Error: U16 Daily Inward Limit Reached' for your UPI ID ({req.scammer_upi or 'bijli.board.pay@ybl'}). Screenshot attached. Please immediately send your backup Bank Account Number + IFSC code or secondary UPI so I can complete payment without delay.",
-        "recommended_text_hindi": f"सर, मैंने ₹{req.amount or '25,000'} UPI से भेजने की कोशिश की लेकिन आपके UPI ID ({req.scammer_upi or 'bijli.board.pay@ybl'}) पर 'Daily Limit Exceeded (U16)' का एरर आ गया। स्क्रीनशॉट संलग्न है। कृपया तुरंत अपना दूसरा बैकअप बैंक खाता नंबर और IFSC कोड भेजें ताकि मैं बिना रुकावट ट्रांसफर कर सकूं।"
+        "recommended_text_english": f"Sir, I tried sending ₹{req.amount or '25,000'} via UPI but my bank says 'NPCI Error: U16 Daily Inward Limit Reached' for your UPI ID ({req.scammer_upi or 'apcol.bijli.bill@ybl'}). Screenshot attached. Please immediately send your backup Bank Account Number + IFSC code or secondary UPI so I can complete payment without delay.",
+        "recommended_text_hindi": f"सर, मैंने ₹{req.amount or '25,000'} UPI से भेजने की कोशिश की लेकिन आपके UPI ID ({req.scammer_upi or 'apcol.bijli.bill@ybl'}) पर 'Daily Limit Exceeded (U16)' का एरर आ गया। स्क्रीनशॉट संलग्न है। कृपया तुरंत अपना दूसरा बैकअप बैंक खाता नंबर और IFSC कोड भेजें ताकि मैं बिना रुकावट ट्रांसफर कर सकूं।"
     }
 
 @router.post("/log-trap-visit")

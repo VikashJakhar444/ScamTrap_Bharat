@@ -29,6 +29,12 @@ BRIDGE_PORT = int(os.getenv("BRIDGE_PORT", "3000"))
 BRIDGE_TOKEN = os.getenv("BRIDGE_TOKEN", "")
 if not BRIDGE_TOKEN:
     BRIDGE_TOKEN = hashlib.sha256(os.urandom(32)).hexdigest()[:32]
+    print(">>> [SECURITY] BRIDGE_TOKEN is not set in .env — a random token was "
+          "minted for this boot. The Node bridge will get 403s until you set the "
+          "same BRIDGE_TOKEN in .env for BOTH processes.")
+
+# Hard cap so a hostile webhook cannot stuff the LLM prompt or the DB.
+MAX_CHAT_TEXT = 2000
 
 # reply engine provider timeouts are handled inside reply_ai; nothing else here.
 
@@ -57,6 +63,48 @@ def get_active_mode() -> str:
 def _is_loopback(request: Request) -> bool:
     host = (request.client.host if request.client else "") or ""
     return host in ("127.0.0.1", "::1", "localhost")
+
+
+def _same_origin_browser(request: Request) -> bool:
+    """True when the request comes from a browser page served by this app.
+
+    Same-origin fetches send an Origin header; we compare its host to the
+    Host header. Used for UI-facing state changes (set-mode) where a bridge
+    token would break the browser flow."""
+    origin = request.headers.get("origin") or ""
+    if not origin:
+        return False
+    try:
+        origin_host = urllib.parse.urlsplit(origin).netloc
+    except Exception:                                        # noqa: BLE001
+        return False
+    host = (request.headers.get("host") or "").strip()
+    return bool(origin_host) and origin_host == host
+
+
+def _require_bridge_or_local(request: Request) -> None:
+    """Bridge-only endpoints (outbox claim, sents, wa-status POST)."""
+    if not _is_loopback(request):
+        raise HTTPException(status_code=403, detail="bridge endpoints are loopback only")
+    token = (request.headers.get("x-bridge-token") or "").strip()
+    if BRIDGE_TOKEN and token != BRIDGE_TOKEN:
+        raise HTTPException(status_code=403, detail="bad bridge token")
+
+
+def _require_ui_or_local(request: Request) -> None:
+    """UI-facing state changes (set-mode): same-origin browser or plain curl.
+
+    Order matters: an attacker's page in the victim's browser also connects
+    from 127.0.0.1, so loopback alone is NOT CSRF-safe. When an Origin
+    header is present it must match our own host; only Origin-less requests
+    (curl, server-to-server) may rely on the loopback check."""
+    origin = (request.headers.get("origin") or "").strip()
+    if origin and not _same_origin_browser(request):
+        raise HTTPException(status_code=403, detail="cross-origin set-mode rejected")
+    if not origin and not _is_loopback(request):
+        token = (request.headers.get("x-bridge-token") or "").strip()
+        if not (BRIDGE_TOKEN and token == BRIDGE_TOKEN):
+            raise HTTPException(status_code=403, detail="set-mode is same-origin only")
 
 
 def _norm_phone(value: str) -> str:
@@ -123,8 +171,9 @@ def get_honeypot_status():
 
 
 @router.post("/wa-status")
-def update_wa_status(payload: WaStatusPayload):
+def update_wa_status(payload: WaStatusPayload, request: Request):
     """The Node bridge pushes its live status here (QR + connected + number)."""
+    _require_bridge_or_local(request)
     import time
     _bridge_state["connected"] = bool(payload.connected)
     _bridge_state["last_seen"] = time.time()
@@ -178,9 +227,10 @@ def get_mode():
 
 
 @router.post("/set-mode")
-def set_mode(payload: ModePayload):
+def set_mode(payload: ModePayload, request: Request):
     """Exactly one mode acts at a time. mode1 = co-pilot (human driven),
     mode2 = cloud node (auto-capable)."""
+    _require_ui_or_local(request)
     mode = (payload.mode or "").strip().lower()
     if mode not in ("mode1", "mode2"):
         raise HTTPException(status_code=422, detail="mode must be 'mode1' or 'mode2'")
@@ -226,11 +276,14 @@ def get_scammer_threads():
 # Outbox: replies the bridge still has to deliver (survives restarts)
 # --------------------------------------------------------------------------- #
 @router.get("/outbox")
-def get_outbox(pending: int = 0):
+def get_outbox(request: Request, pending: int = 0):
     """Messages the WhatsApp bridge must still deliver.
 
     `?pending=1` marks rows as 'claimed' so a reconnecting bridge does not
     double-send, while the normal call (no arg) stays backward compatible."""
+    # Claiming (pending=1) is bridge-only; a bare read is harmless.
+    if pending:
+        _require_bridge_or_local(request)
     with get_db_connection() as conn:
         rows = conn.execute(
             "SELECT id, case_id, message_text, send_state FROM cloud_messages "
@@ -266,8 +319,9 @@ class SentPayload(BaseModel):
 
 
 @router.post("/sents")
-def mark_sent(payload: SentPayload):
+def mark_sent(payload: SentPayload, request: Request):
     """Bridge confirms delivery so we stop retrying."""
+    _require_bridge_or_local(request)
     if not payload.ids:
         return {"status": "noop"}
     with get_db_connection() as conn:
@@ -419,6 +473,8 @@ def inbound_webhook(payload: WebhookPayload, request: Request):
     text = (payload.text or "").strip()
     if not text:
         return {"status": "ignored", "reason": "empty"}
+    if len(text) > MAX_CHAT_TEXT:
+        text = text[:MAX_CHAT_TEXT]
 
     phone_norm = _norm_phone(payload.from_user)
     dedup = payload.wamid or hashlib.sha1(f"{phone_norm}|{text}".encode("utf-8")).hexdigest()
@@ -457,6 +513,10 @@ def inbound_webhook(payload: WebhookPayload, request: Request):
         )
         conn.commit()
     mine_details(case_id, text)
+
+    # Automate toggle: when off, store the inbound but do not spend an AI turn.
+    if _app_get("cloud_auto", "1") != "1":
+        return {"status": "queued", "reason": "auto_disabled", "case_id": case_id}
 
     persona = _persona_of(session)
     history = _cloud_history(case_id)
@@ -509,6 +569,7 @@ class InitCloudPayload(BaseModel):
     case_context: Optional[Dict[str, Any]] = None
     persona_mode: str = "self"
     transport: str = "own"
+    cloud_auto: bool = True
     import_context: Optional[ImportPayload] = None
 
 
@@ -555,6 +616,10 @@ def init_cloud_session(payload: InitCloudPayload):
 
     if persona_mode == "character" and not fake_name:
         raise HTTPException(status_code=422, detail="fake_name is required for a relative persona")
+
+    # Persist the automate preference so the webhook knows whether to reply
+    # on its own or just queue the scammer's message for the citizen.
+    _app_set("cloud_auto", "1" if payload.cloud_auto else "0")
 
     case_id = f"CLOUD-{uuid.uuid4().hex[:8].upper()}"
     imported = payload.import_context or ImportPayload()
@@ -637,19 +702,23 @@ def _cloud_history(case_id: str) -> List[Dict[str, Any]]:
 
 
 @router.get("/cloud-history")
-def get_cloud_history(case_id: str):
+def get_cloud_history(case_id: Optional[str] = None, case: Optional[str] = None):
+    """Accepts `case_id` (canonical) and `case` (legacy alias)."""
+    cid = (case_id or case or "").strip()
+    if not cid:
+        raise HTTPException(status_code=422, detail="case_id is required")
     with get_db_connection() as conn:
         session = conn.execute(
             "SELECT case_id, scammer_phone, persona_details, status, persona_mode, transport "
             "FROM cloud_sessions WHERE case_id = ?",
-            (case_id,),
+            (cid,),
         ).fetchone()
     if session is None:
         raise HTTPException(status_code=404, detail="cloud session not found")
     return {
         "session": dict(session),
-        "chat_history": _cloud_history(case_id),
-        "extracted": get_extracted(case_id)["details"],
+        "chat_history": _cloud_history(cid),
+        "extracted": get_extracted(cid)["details"],
         "active_mode": get_active_mode(),
     }
 
@@ -669,6 +738,8 @@ def cloud_chat_message(payload: SentMessagePayload):
     text = (payload.scammer_message or "").strip()
     if not text:
         raise HTTPException(status_code=422, detail="scammer_message is required")
+    if len(text) > MAX_CHAT_TEXT:
+        raise HTTPException(status_code=413, detail=f"scammer_message too long (max {MAX_CHAT_TEXT})")
 
     with get_db_connection() as conn:
         session = conn.execute(
@@ -826,4 +897,58 @@ def demo_turn(payload: DemoTurnPayload):
         "provider": result["provider"],
         "details": details,
     }
+
+
+class AppendMessagePayload(BaseModel):
+    case_id: str
+    sender_role: str  # 'scammer' | 'ai_decoy'
+    message_text: str
+
+
+@router.post("/append-message")
+def append_message(payload: AppendMessagePayload, request: Request):
+    """Persist one Mode 1 co-pilot turn into the shared `messages` table.
+
+    Mode 1 used to keep the conversation only in browser memory, so the
+    evidence tab had nothing to show for live co-pilot work. This endpoint
+    writes each turn (scammer message + AI decoy reply) into the same table
+    Tab 1 handover already uses, so Tab 3 and the PDF dossier see live Mode 1
+    transcripts exactly like seeded or Mode 2 ones."""
+    _require_ui_or_local(request)
+
+    text = (payload.message_text or "").strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="message_text is required")
+    if len(text) > MAX_CHAT_TEXT:
+        raise HTTPException(status_code=413, detail=f"message_text too long (max {MAX_CHAT_TEXT})")
+
+    role = (payload.sender_role or "").strip().lower()
+    if role == "ai":
+        role = "ai_decoy"
+    if role not in ("scammer", "ai_decoy", "system"):
+        raise HTTPException(status_code=422, detail="sender_role must be scammer, ai_decoy or system")
+
+    case_id = (payload.case_id or "").strip()
+    if not case_id:
+        raise HTTPException(status_code=422, detail="case_id is required")
+
+    with get_db_connection() as conn:
+        # Auto-open a standby case row so evidence lookups (which read `cases`
+        # first) find it. A case that already exists is left untouched.
+        row = conn.execute(
+            "SELECT 1 FROM cases WHERE case_id = ?", (case_id,)
+        ).fetchone()
+        if row is None:
+            conn.execute(
+                "INSERT OR IGNORE INTO cases (case_id, scammer_phone, scam_category, status) "
+                "VALUES (?, 'UNSPECIFIED', 'General Suspicious', 'STANDBY')",
+                (case_id,),
+            )
+        conn.execute(
+            "INSERT INTO messages (case_id, sender_role, message_text) VALUES (?, ?, ?)",
+            (case_id, role, text),
+        )
+        conn.commit()
+
+    return {"status": "success", "case_id": case_id, "sender_role": role}
 

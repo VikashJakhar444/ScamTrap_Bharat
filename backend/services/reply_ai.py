@@ -41,6 +41,12 @@ _GROQ_TIMEOUT = 40
 _OLLAMA_TIMEOUT = 45
 _GEMINI_TIMEOUT = 35
 
+# Hard ceiling for ONE reply. Without this the worst case is
+# 5×40 + 3×45 + 3×35 ≈ 440 s of a threadpool thread burned per message.
+# 25 s keeps the UX sane and still lets a slow-but-working Groq model finish.
+import os as _os
+REPLY_BUDGET_S = float(_os.getenv("REPLY_BUDGET_S", "25"))
+
 _OPENAI_MAX_TOKENS = 700  # gpt-oss burns some tokens on reasoning first
 
 
@@ -621,6 +627,10 @@ def generate_reply(
     attempts: List[str] = []
 
     for name, fn in (("groq", _groq), ("ollama", _ollama), ("gemini", _gemini)):
+        # Global deadline: never start another provider once the budget is spent.
+        if time.time() - started >= REPLY_BUDGET_S:
+            attempts.append(f"budget: {REPLY_BUDGET_S:.0f}s exhausted before {name}")
+            break
         try:
             raw = fn(system, turns, temperature)
         except Exception as exc:

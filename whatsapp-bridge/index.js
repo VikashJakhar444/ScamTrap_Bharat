@@ -16,7 +16,6 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const cors = require('cors');
 const axios = require('axios');
 const QRCode = require('qrcode');
 require('qrcode-terminal');
@@ -46,6 +45,9 @@ loadEnvFile();
 const BACKEND = process.env.BACKEND_URL || 'http://127.0.0.1:8050';
 const BRIDGE_PORT = parseInt(process.env.BRIDGE_PORT || '3000', 10);
 const BRIDGE_TOKEN = process.env.BRIDGE_TOKEN || '';
+if (!BRIDGE_TOKEN) {
+  console.error('[bridge] FATAL: BRIDGE_TOKEN is empty. Every call to the backend will 403. Set BRIDGE_TOKEN in the project root .env and restart both processes.');
+}
 
 // Human typing simulation (average realistic WhatsApp reply behaviour)
 const READ_DELAY_MIN_MS = 2000;
@@ -88,10 +90,13 @@ async function pushStatus(extra = {}) {
         phone_number: linkedPhone,
         ...extra,
       },
-      { timeout: 4000 }
+      { headers: { 'x-bridge-token': BRIDGE_TOKEN }, timeout: 4000 }
     );
   } catch (e) {
     log('status push failed:', e.message);
+    if (e.response && e.response.status === 403) {
+      log('FATAL: backend rejected the bridge token. Set the SAME BRIDGE_TOKEN in the project root .env and restart BOTH processes.');
+    }
   }
 }
 
@@ -106,6 +111,9 @@ async function forwardInbound(from, body, wamid) {
     return res.data;
   } catch (e) {
     log('webhook failed:', e.message);
+    if (e.response && e.response.status === 403) {
+      log('FATAL: backend rejected the bridge token. Set the SAME BRIDGE_TOKEN in the project root .env and restart BOTH processes.');
+    }
     return null;
   }
 }
@@ -141,11 +149,21 @@ client.on('qr', (qr) => {
   });
 });
 
-client.on('ready', () => {
+client.on('ready', async () => {
   connected = true;
   currentQrData = null;
   currentQrPng = null;
   log('WhatsApp session ready');
+  // Capture the linked phone number so the backend can match webhooks by phone.
+  try {
+    const info = await client.getInfo();
+    if (info && info.wid && info.wid.user) {
+      linkedPhone = `+${info.wid.user}`;
+      log('linked phone:', linkedPhone);
+    }
+  } catch (e) {
+    log('could not read linked phone:', e.message);
+  }
   pushStatus();
 });
 
@@ -199,6 +217,7 @@ async function deliverOutbox() {
   try {
     const res = await axios.get(`${BACKEND}/api/honeypot/outbox`, {
       params: { pending: 1 },
+      headers: { 'x-bridge-token': BRIDGE_TOKEN },
       timeout: 6000,
     });
     const items = (res.data && res.data.outbox) || [];
@@ -208,10 +227,14 @@ async function deliverOutbox() {
       if (ok) ids.push(item.id);
     }
     if (ids.length) {
-      await axios.post(`${BACKEND}/api/honeypot/sents`, { ids }, { timeout: 6000 });
+      await axios.post(`${BACKEND}/api/honeypot/sents`, { ids },
+        { headers: { 'x-bridge-token': BRIDGE_TOKEN }, timeout: 6000 });
     }
   } catch (e) {
     log('outbox delivery error:', e.message);
+    if (e.response && e.response.status === 403) {
+      log('FATAL: backend rejected the bridge token on outbox/sents.');
+    }
   }
 }
 
@@ -219,14 +242,23 @@ async function deliverOutbox() {
 // Express (outbound API for the backend / UI)
 // --------------------------------------------------------------------------- #
 const app = express();
-app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/status', (_req, res) => {
+// Every endpoint on the bridge requires the shared token. Without this any
+// page a user visits could drive their own WhatsApp via localhost CSRF.
+function requireToken(req, res, next) {
+  const token = (req.headers['x-bridge-token'] || req.query.token || '').toString();
+  if (!BRIDGE_TOKEN || token !== BRIDGE_TOKEN) {
+    return res.status(403).json({ error: 'bad or missing bridge token' });
+  }
+  next();
+}
+
+app.get('/status', requireToken, (_req, res) => {
   res.json({ connected, phone: linkedPhone, has_qr: Boolean(currentQrData) });
 });
 
-app.post('/send', async (req, res) => {
+app.post('/send', requireToken, async (req, res) => {
   const { to, text } = req.body || {};
   if (!to || !text) return res.status(422).json({ error: 'to and text are required' });
   if (!connected) return res.status(503).json({ error: 'whatsapp not connected' });

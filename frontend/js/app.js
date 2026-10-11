@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) { /* private mode */ }
   if (ui['hero-main']) ui['hero-main'].hidden = restoredTab !== 'tab-checker';
   if (ui['hero-honeypot']) ui['hero-honeypot'].hidden = restoredTab !== 'tab-honeypot';
+  if (ui['hero-proof']) ui['hero-proof'].hidden = restoredTab !== 'tab-proof';
   if (restoredTab === 'tab-honeypot') {
     renderTargetBar();
     syncCoPilotPanel();
@@ -82,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function cacheDom() {
   [
-    'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region', 'hero-main', 'hero-honeypot',
+    'desktop-tablist', 'mobile-tablist', 'hamburger-btn', 'toast-region', 'hero-main', 'hero-honeypot', 'hero-proof',
     'quick-search-input', 'quick-search-btn', 'chip-scam-upi', 'chip-scam-msg',
     'scam-msg-input', 'analyze-msg-btn', 'btn-clear-tab1',
     'dropzone-box', 'scam-img-input',
@@ -123,7 +124,12 @@ function cacheDom() {
     'demo-player', 'demo-chat-box', 'demo-details', 'demo-details-list', 'demo-wa-frame', 'demo-chat-name',
     'm2-tab-live', 'm2-tab-demo', 'm2-panel-live', 'm2-panel-demo',
     'banner-case-id', 'banner-hash', 'ev-upi-list', 'ev-bank-list',
-    'ev-device', 'ev-transcript',
+    'ev-device', 'ev-transcript', 'ev-funnel',
+    'ev-case-picker', 'ev-threat-badge', 'ev-category-badge',
+    'ev-copy-hash',
+    'ev-trap-link-wrap', 'ev-trap-link',
+    'hero-proof-pdf', 'hero-proof-freeze',
+    't3-hero-sub', 'ev-msg-count', 'hero-doc-case', 'hero-doc-hash',
     'kpi-reports', 'kpi-blacklisted', 'kpi-cases', 'kpi-resolved',
     'blacklist-search-input', 'trends-blacklist-tbody', 'blacklist-count',
     'category-bars',
@@ -204,9 +210,10 @@ function switchTab(targetId, scrollEl) {
 
   try { localStorage.setItem('stb_active_tab', targetId); } catch (e) { /* private mode */ }
 
-  // Hero + stats ledger on Tab 1 & Tab 2
+  // Hero + stats ledger on Tab 1 & Tab 2 & Tab 3
   if (ui['hero-main']) ui['hero-main'].hidden = targetId !== 'tab-checker';
   if (ui['hero-honeypot']) ui['hero-honeypot'].hidden = targetId !== 'tab-honeypot';
+  if (ui['hero-proof']) ui['hero-proof'].hidden = targetId !== 'tab-proof';
 
   ui['mobile-tablist'].classList.remove('is-open');
   ui['hamburger-btn'].setAttribute('aria-expanded', 'false');
@@ -1339,6 +1346,18 @@ function syncCaseGate() {
   if (btn) btn.disabled = !ready;
 }
 
+/* Mode 1 co-pilot turns are persisted so Tab 3 / the PDF dossier see the
+   live transcript. Fire-and-forget: a failed persist must never block the
+   chat UX. */
+function persistMode1Turn(caseId, senderRole, text) {
+  if (!caseId || !text) return;
+  postJson('/api/honeypot/append-message', {
+    case_id: caseId,
+    sender_role: senderRole,
+    message_text: String(text).slice(0, 2000)
+  }).catch(() => {});
+}
+
 async function generateNextReply() {
   if (!state.handoverDone) {
     toast(t('t2_need_case'), 'error');
@@ -1352,6 +1371,10 @@ async function generateNextReply() {
   const btn = ui['btn-m1-generate'];
   btn.disabled = true;
   appendThread('scammer', text);
+
+  // Persist the scammer's turn so the evidence tab / PDF can see live Mode 1 work.
+  const caseId = state.activeCaseId || state.selectedCase || CASE_ID;
+  persistMode1Turn(caseId, 'scammer', text);
 
   try {
     const res = await postJson('/api/co-pilot/next-reply', {
@@ -1370,6 +1393,7 @@ async function generateNextReply() {
     ]);
     state.lastSuggestion = reply;
     appendThread('ai', reply, { attached: sendImage });
+    persistMode1Turn(caseId, 'ai_decoy', reply);
 
     if (ui['m1-suggested']) {
       ui['m1-suggested'].value = reply;
@@ -1523,6 +1547,7 @@ async function deployCloudNode(personaMode, excuse, transport) {
       case_context: buildCaseContext(),
       persona_mode: personaMode,
       transport: transport === 'self' ? 'own' : 'system',
+      cloud_auto: !!state.cloudAuto,
       import_context: {
         case_context: buildCaseContext(),
         copilot_turns: (state.copilotHistory || []).slice(-20),
@@ -1534,6 +1559,7 @@ async function deployCloudNode(personaMode, excuse, transport) {
 
     state.cloudCaseId = res.case_id;
     state.cloudHistory = res.chat_history || [];
+    state.cloudPersona = res.persona || null;
     if (ui['cloud-case-chip']) ui['cloud-case-chip'].textContent = res.case_id;
     // Show the scammer's number as the chat header, like a real WhatsApp chat.
     if (ui['cloud-node-name']) {
@@ -1582,7 +1608,7 @@ function stopCloudChatPolling() {
 async function pollCloudChat() {
   if (!state.cloudCaseId || state.cloudCaseId === 'DEPLOYING') return;
   try {
-    const res = await fetchJson(`/api/honeypot/cloud-history?case=${encodeURIComponent(state.cloudCaseId)}`);
+    const res = await fetchJson(`/api/honeypot/cloud-history?case_id=${encodeURIComponent(state.cloudCaseId)}`);
     const rows = (res.chat_history || []);
     // Only re-render when the row count changed (new message arrived).
     if (rows.length !== (state.cloudHistory || []).length) {
@@ -1860,7 +1886,14 @@ function renderCloudHistory() {
     if (role === 'scammer') cloudAppend('wa-bubble-scammer', row.message_text, row.timestamp);
     else cloudAppend('wa-bubble-decoy', row.message_text, row.timestamp);
     if (Number(row.send_image) === 1) {
-      cloudAppendImage(`/api/co-pilot/fake-receipt?case=${encodeURIComponent(state.cloudCaseId || '')}`);
+      const persona = state.cloudPersona || {};
+      const q = new URLSearchParams({
+        upi: persona.scammer_upi || 'bijli.board.pay@ybl',
+        amount: persona.amount || '25,000',
+        sender_name: persona.fake_name || 'Rahul Sharma',
+        case_id: state.cloudCaseId || ''
+      });
+      cloudAppendImage(`/api/co-pilot/fake-receipt?${q.toString()}`);
     }
   });
 }
@@ -1906,17 +1939,88 @@ function nowTime() {
 }
 
 /* --------------------------------------------------------------------------
-   Tab 3 · Evidence
+   Tab 3 · Evidence dossier
    -------------------------------------------------------------------------- */
 function initEvidence() {
-  const link = document.getElementById('btn-download-pdf-main');
-  if (link) link.href = `/api/reports/download-pdf?case_id=${CASE_ID}`;
+  // Case picker: list every case the evidence API can serve.
+  const picker = ui['ev-case-picker'];
+  if (picker) {
+    picker.addEventListener('change', () => {
+      state.selectedCase = picker.value;
+      loadEvidence();
+    });
+  }
+
+  // Copy hash
+  if (ui['ev-copy-hash']) {
+    ui['ev-copy-hash'].addEventListener('click', () => {
+      const hash = (state.evidence && state.evidence.evidence_hash) || '';
+      if (!hash) return;
+      copyToClipboard(hash);
+      toast(t('toast_copied'), 'success');
+    });
+  }
+
+  // Freeze-request modal
+  if (ui['hero-proof-freeze']) ui['hero-proof-freeze'].addEventListener('click', openFreezeMailto);
+  const fzClose = document.getElementById('btn-freeze-modal-close');
+  if (fzClose) fzClose.addEventListener('click', closeFreezeModal);
+  const fzBackdrop = document.getElementById('freeze-modal-backdrop');
+  if (fzBackdrop) fzBackdrop.addEventListener('click', closeFreezeModal);
+  const fzCopy = document.getElementById('btn-freeze-copy');
+  if (fzCopy) fzCopy.addEventListener('click', copyFreezeDraft);
+  // Escape closes the modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('freeze-modal');
+      if (modal && !modal.classList.contains('is-hidden')) closeFreezeModal();
+    }
+  });
+
+  // Initial defaults
+  const heroLink = ui['hero-proof-pdf'];
+  if (heroLink) heroLink.href = `/api/reports/download-pdf?case_id=${CASE_ID}`;
   const banner = ui['banner-case-id'];
   if (banner) banner.textContent = CASE_ID;
 }
 
+/* ── Case list for the picker ──────────────────────────────────────────── */
+async function loadCaseList() {
+  const picker = ui['ev-case-picker'];
+  if (!picker) return;
+  try {
+    const res = await fetch('/api/honeypot/threads');
+    const payload = await res.json();
+    const rows = Array.isArray(payload) ? payload : (payload.threads || []);
+    const seen = new Set();
+    const options = [];
+    options.push({ case_id: CASE_ID, label: CASE_ID });
+    seen.add(CASE_ID);
+    for (const r of rows) {
+      const cid = r.case_id;
+      if (cid && !seen.has(cid)) {
+        seen.add(cid);
+        options.push({ case_id: cid, label: cid + (r.scammer_phone && r.scammer_phone !== 'UNSPECIFIED' ? ` · ${r.scammer_phone}` : '') });
+      }
+    }
+    const cur = state.selectedCase || CASE_ID;
+    if (cur && !seen.has(cur)) {
+      options.unshift({ case_id: cur, label: cur });
+    }
+    picker.innerHTML = options.map((o) =>
+      `<option value="${escapeHtml(o.case_id)}"${o.case_id === cur ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
+    ).join('');
+  } catch (e) {
+    if (picker && !picker.options.length) {
+      picker.innerHTML = `<option value="${escapeHtml(CASE_ID)}">${escapeHtml(CASE_ID)}</option>`;
+    }
+  }
+}
+
+/* ── Evidence fetch + render ───────────────────────────────────────────── */
 async function loadEvidence() {
   const caseId = state.selectedCase || CASE_ID;
+  loadCaseList();
   try {
     const res = await fetch(`/api/reports/case-evidence?case_id=${encodeURIComponent(caseId)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1936,62 +2040,249 @@ async function loadEvidence() {
 function renderEvidence() {
   const ev = state.evidence;
 
+  // Always update PDF href to follow the active case.
+  const caseId = ev ? ev.case_id : (state.selectedCase || CASE_ID);
+  if (ui['hero-proof-pdf']) ui['hero-proof-pdf'].href = `/api/reports/download-pdf?case_id=${encodeURIComponent(caseId)}`;
+  if (ui['hero-doc-case']) ui['hero-doc-case'].textContent = caseId;
+  if (ui['hero-doc-hash']) ui['hero-doc-hash'].textContent = ev ? `SHA-256 ${(ev.evidence_hash || '').slice(0, 28)}…` : 'SHA-256 …';
+
   if (!ev) {
-    ui['banner-case-id'].textContent = CASE_ID;
-    ui['banner-hash'].textContent = 'SHA-256: —';
-    ui['ev-upi-list'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
-    ui['ev-bank-list'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
-    ui['ev-device'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
-    ui['ev-transcript'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
-    renderProgress([], []);
+    if (ui['banner-case-id']) ui['banner-case-id'].textContent = caseId;
+    if (ui['banner-hash']) ui['banner-hash'].textContent = 'SHA-256: —';
+    if (ui['t3-hero-sub']) ui['t3-hero-sub'].textContent = '';
+    if (ui['ev-upi-list']) ui['ev-upi-list'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
+    if (ui['ev-bank-list']) ui['ev-bank-list'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
+    if (ui['ev-device']) ui['ev-device'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
+    if (ui['ev-transcript']) ui['ev-transcript'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
+    if (ui['ev-funnel']) ui['ev-funnel'].innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
+    if (ui['ev-trap-link-wrap']) ui['ev-trap-link-wrap'].hidden = true;
+    if (ui['ev-msg-count']) ui['ev-msg-count'].textContent = '';
+    hideEvBadges();
     return;
   }
 
-  ui['banner-case-id'].textContent = ev.case_id;
-  ui['banner-hash'].textContent = `SHA-256: ${ev.evidence_hash || '—'}`;
+  // ── Case bar ───────────────────────────────────────────────────────────
+  if (ui['banner-case-id']) ui['banner-case-id'].textContent = ev.case_id;
+  if (ui['banner-hash']) ui['banner-hash'].textContent = `SHA-256: ${(ev.evidence_hash || '').slice(0, 16)}…`;
+  if (ui['ev-copy-hash']) ui['ev-copy-hash'].title = ev.evidence_hash || '';
 
+  // Threat / category badges
+  const threat = ui['ev-threat-badge'];
+  if (threat) {
+    const hasBlacklisted = (ev.identifiers || []).some((i) => i.blacklisted);
+    if (hasBlacklisted) {
+      threat.hidden = false;
+      threat.textContent = t('t3_threat_active');
+    } else threat.hidden = true;
+  }
+  const cat = ui['ev-category-badge'];
+  if (cat) {
+    if (ev.scam_category && ev.scam_category !== 'Unknown') {
+      cat.hidden = false;
+      cat.textContent = ev.scam_category;
+    } else cat.hidden = true;
+  }
+
+  // ── Hero subtitle: one plain-language line ─────────────────────────────
+  const msgCount = (ev.messages || []).length;
+  const identCount = (ev.identifiers || []).length;
+  if (ui['t3-hero-sub']) {
+    ui['t3-hero-sub'].textContent =
+      `${msgCount} ${t('t3_sub_msgs')} · ${identCount} ${t('t3_sub_idents')}`;
+  }
+  if (ui['ev-msg-count']) ui['ev-msg-count'].textContent = msgCount ? `(${msgCount})` : '';
+
+  // ── Payment details ────────────────────────────────────────────────────
   const byType = (types) => (ev.identifiers || []).filter((i) => types.includes(i.type));
+  if (ui['ev-upi-list']) ui['ev-upi-list'].innerHTML = identBlock(byType(['UPI', 'PHONE']));
+  if (ui['ev-bank-list']) ui['ev-bank-list'].innerHTML = identBlock(byType(['BANK_AC', 'IFSC']));
 
-  ui['ev-upi-list'].innerHTML = identBlock(byType(['UPI', 'PHONE']));
-  ui['ev-bank-list'].innerHTML = identBlock(byType(['BANK_AC', 'IFSC']));
-
+  // ── Device capture + trap link ─────────────────────────────────────────
   const captures = ev.canary_captures || [];
-  ui['ev-device'].innerHTML = captures.length
-    ? `<div class="kv-list">${captures.map((c) => `
-        <div class="kv">
-          <span class="kv__k">${escapeHtml(c.ip_address)}</span>
-          <span class="kv__v">${escapeHtml(c.device_os)}</span>
-        </div>`).join('')}
-        <div class="kv">
-          <span class="kv__k">User agent</span>
-          <span class="kv__v text-xs mono">${escapeHtml(captures[0].browser_ua || '')}</span>
-        </div>
-        <div class="kv">
-          <span class="kv__k">${escapeHtml(t('ev_captures'))}</span>
-          <span class="kv__v">${ev.capture_count}</span>
-        </div>
-      </div>`
-    : `<div class="alert-box alert-box-warn">
-         <div class="alert-box__title"><svg aria-hidden="true"><use href="#i-clock"></use></svg><span>${escapeHtml(t('ev_pending'))}</span></div>
-         <p class="alert-box__body">${escapeHtml(t('t3_device_note'))}</p>
-       </div>`;
+  if (ui['ev-device']) {
+    ui['ev-device'].innerHTML = captures.length
+      ? `<div class="kv-list">${captures.map((c) => `
+          <div class="kv">
+            <span class="kv__k">${escapeHtml(c.ip_address || '')}</span>
+            <span class="kv__v">${escapeHtml(c.device_os || '')}</span>
+          </div>`).join('')}
+          <div class="kv">
+            <span class="kv__k">User agent</span>
+            <span class="kv__v text-xs mono">${escapeHtml(captures[0].browser_ua || '')}</span>
+          </div>
+        </div>`
+      : `<p class="text-sm muted">${escapeHtml(t('t3_device_empty'))}</p>`;
+  }
+  if (ui['ev-trap-link-wrap']) {
+    ui['ev-trap-link-wrap'].hidden = false;
+    if (ui['ev-trap-link']) {
+      ui['ev-trap-link'].href = `/receipt/TRAP-${encodeURIComponent(caseId)}?case=${encodeURIComponent(caseId)}`;
+    }
+  }
 
+  // ── Kill-chain funnel (inside Technical details) ───────────────────────
+  renderFunnel(ev.kill_chain || {});
+
+  // ── Transcript ─────────────────────────────────────────────────────────
   const messages = ev.messages || [];
-  ui['ev-transcript'].innerHTML = messages.length
-    ? messages.map((m) => {
-        const roleKey = m.sender_role === 'scammer' ? 'ev_role_scammer'
-          : m.sender_role === 'ai_decoy' ? 'ev_role_ai_decoy' : 'ev_role_system';
-        const tone = m.sender_role === 'scammer' ? 'u-red'
-          : m.sender_role === 'ai_decoy' ? 'u-emerald' : 'muted';
-        const time = String(m.timestamp || '').slice(11, 16);
-        return `<div class="transcript-row">
-          <div class="transcript-row__meta ${tone}">${escapeHtml(t(roleKey))}${time ? ` · ${escapeHtml(time)}` : ''}</div>
-          <div class="transcript-row__text">${escapeHtml(m.message_text)}</div>
-        </div>`;
-      }).join('')
-    : emptyNote(t('ev_none'), t('ev_none_note'));
+  if (ui['ev-transcript']) {
+    ui['ev-transcript'].innerHTML = messages.length
+      ? messages.map((m) => {
+          const roleKey = m.sender_role === 'scammer' ? 'ev_role_scammer'
+            : m.sender_role === 'ai_decoy' ? 'ev_role_ai_decoy' : 'ev_role_system';
+          const tone = m.sender_role === 'scammer' ? 'u-red'
+            : m.sender_role === 'ai_decoy' ? 'u-emerald' : 'muted';
+          const time = String(m.timestamp || '').slice(11, 16);
+          return `<div class="transcript-row">
+            <div class="transcript-row__meta ${tone}">${escapeHtml(t(roleKey))}${time ? ` · ${escapeHtml(time)}` : ''}</div>
+            <div class="transcript-row__text">${escapeHtml(m.message_text)}</div>
+          </div>`;
+        }).join('')
+      : emptyNote(t('ev_none'), t('ev_none_note'));
+  }
+}
 
-  renderProgress(messages, ev.identifiers || []);
+function hideEvBadges() {
+  ['ev-threat-badge', 'ev-category-badge'].forEach((id) => {
+    if (ui[id]) ui[id].hidden = true;
+  });
+  if (ui['ev-trap-link-wrap']) ui['ev-trap-link-wrap'].hidden = true;
+}
+
+/* ── Kill-chain funnel ─────────────────────────────────────────────────── */
+function renderFunnel(kc) {
+  const box = ui['ev-funnel'];
+  if (!box) return;
+  const stages = kc.stages || [];
+  if (!stages.length) {
+    box.innerHTML = emptyNote(t('ev_none'), t('ev_none_note'));
+    return;
+  }
+  box.innerHTML = `<ol class="funnel">${stages.map((s, idx) => {
+    const hit = s.count > 0;
+    const stageKey = t('t3_stage_' + s.key);
+    const matched = (s.messages || []).map((m) =>
+      `<div class="funnel__msg" data-msg-id="${m.id}">
+         <span class="funnel__msg-role ${m.role === 'scammer' ? 'u-red' : 'u-emerald'}">${escapeHtml(t(m.role === 'scammer' ? 'ev_role_scammer' : 'ev_role_ai_decoy'))}</span>
+         <span class="funnel__msg-text">${escapeHtml(m.text)}</span>
+         ${m.matched && m.matched.length ? `<span class="funnel__msg-matched">${m.matched.map((x) => escapeHtml(x)).join(', ')}</span>` : ''}
+       </div>`
+    ).join('');
+    return `<li class="funnel__stage ${hit ? 'is-hit' : 'is-miss'}" data-stage="${s.key}" tabindex="0" role="button" aria-expanded="false">
+      <div class="funnel__dot" aria-hidden="true">${hit ? '<svg><use href="#i-check"></use></svg>' : '<svg><use href="#i-minus"></use></svg>'}</div>
+      <div class="funnel__body">
+        <div class="funnel__head">
+          <span class="funnel__label">${escapeHtml(stageKey)}</span>
+          <span class="funnel__count">${s.count} ${escapeHtml(t('ev_reports'))}</span>
+        </div>
+        <div class="funnel__detail" hidden>${matched || `<p class="text-xs muted">${escapeHtml(t('t3_funnel_no_match'))}</p>`}</div>
+      </div>
+    </li>`;
+  }).join('')}</ol>`;
+
+  // Click to expand / collapse
+  box.querySelectorAll('.funnel__stage').forEach((el) => {
+    el.addEventListener('click', () => toggleFunnelStage(el));
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFunnelStage(el); }
+    });
+  });
+}
+
+function toggleFunnelStage(el) {
+  const detail = el.querySelector('.funnel__detail');
+  if (!detail) return;
+  const open = !detail.hidden;
+  detail.hidden = open;
+  el.setAttribute('aria-expanded', String(!open));
+  el.classList.toggle('is-open', !open);
+}
+
+/* ── Freeze-request modal ──────────────────────────────────────────────── */
+function openFreezeMailto() {
+  const ev = state.evidence;
+  if (!ev) { toast(t('t3_freeze_no_data'), 'error'); return; }
+
+  // Collect real extracted payment identifiers.
+  const upis = (ev.identifiers || []).filter((i) => i.type === 'UPI').map((i) => i.value);
+  const banks = (ev.identifiers || []).filter((i) => i.type === 'BANK_AC').map((i) => i.value);
+  const ifscs = (ev.identifiers || []).filter((i) => i.type === 'IFSC').map((i) => i.value);
+  const phones = (ev.identifiers || []).filter((i) => i.type === 'PHONE').map((i) => i.value);
+
+  const idLines = [];
+  if (upis.length) idLines.push(`UPI handle(s): ${upis.join(', ')}`);
+  if (banks.length) idLines.push(`Bank account(s): ${banks.join(', ')}`);
+  if (ifscs.length) idLines.push(`IFSC: ${ifscs.join(', ')}`);
+  if (phones.length) idLines.push(`Phone(s): ${phones.join(', ')}`);
+  const idBlock = idLines.length ? idLines.join('\n') : t('t3_freeze_no_ids');
+
+  const msgCount = (ev.messages || []).length;
+  const hash = ev.evidence_hash || '—';
+
+  const subject = `[FREEZE REQUEST] Scam mule account — Case ${ev.case_id}`;
+  const body = [
+    'To: The Nodal Officer,',
+    `    [Bank name — fill in]`,
+    '',
+    'Subject: Immediate freeze request — fraudulent mule account used in an active cyber-fraud case',
+    '',
+    'Dear Sir/Madam,',
+    '',
+    'I request an immediate freeze on the account(s) / UPI handle(s) listed below,',
+    'which have been used to solicit fraudulent payments. Evidence is attached as a',
+    'hash-sealed digital dossier.',
+    '',
+    'Case reference: ' + ev.case_id,
+    'Scam category: ' + (ev.scam_category || 'Unknown'),
+    'Number of evidence messages sealed: ' + msgCount,
+    'Evidence integrity SHA-256: ' + hash,
+    '',
+    'Fraudulent identifiers:',
+    idBlock,
+    '',
+    'Please treat this as urgent. A formal cybercrime complaint (1930 / NCRP)',
+    'can follow with the attached dossier.',
+    '',
+    'Regards,',
+    '[Your name]',
+    '[Your phone]',
+  ].join('\n');
+
+  // Fill modal fields
+  const subjEl = document.getElementById('freeze-subject');
+  const bodyEl = document.getElementById('freeze-body');
+  const mailEl = document.getElementById('freeze-open-mail');
+  if (subjEl) subjEl.textContent = subject;
+  if (bodyEl) bodyEl.textContent = body;
+  if (mailEl) {
+    mailEl.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  // Store for copy button
+  state.freezeDraft = { subject, body };
+
+  // Show modal
+  const modal = document.getElementById('freeze-modal');
+  if (modal) {
+    modal.classList.remove('is-hidden');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeFreezeModal() {
+  const modal = document.getElementById('freeze-modal');
+  if (modal) {
+    modal.classList.add('is-hidden');
+    document.body.style.overflow = '';
+  }
+}
+
+function copyFreezeDraft() {
+  const d = state.freezeDraft;
+  if (!d) return;
+  const text = `Subject: ${d.subject}\n\n${d.body}`;
+  copyToClipboard(text);
+  toast(t('toast_copied'), 'success');
 }
 
 function identBlock(items) {
@@ -2016,37 +2307,6 @@ function emptyNote(title, note) {
     <div class="empty-state__title">${escapeHtml(title)}</div>
     <div class="empty-state__note">${escapeHtml(note)}</div>
   </div>`;
-}
-
-function renderProgress(messages, identifiers) {
-  const scamCount = messages.filter((m) => m.sender_role === 'scammer').length;
-  const decoyCount = messages.filter((m) => m.sender_role === 'ai_decoy').length;
-  const baitSent = messages.some((m) =>
-    m.sender_role === 'ai_decoy' && /(limit|u16|error)/i.test(m.message_text || ''));
-  const hasUpi = identifiers.some((i) => i.type === 'UPI');
-  const hasBank = identifiers.some((i) => i.type === 'BANK_AC');
-
-  const steps = [
-    [scamCount > 0, 'prog_1'],
-    [hasUpi, 'prog_2'],
-    [baitSent || decoyCount >= 2, 'prog_3'],
-    [hasBank, 'prog_4']
-  ];
-
-  const box = ui['trap-progress-list'];
-  if (!box) return;
-  box.innerHTML = steps.map(([done, key]) => `
-    <li class="${done ? 'is-done' : 'is-todo'}">
-      <svg aria-hidden="true"><use href="${done ? '#i-check' : '#i-minus'}"></use></svg>
-      <span>${escapeHtml(t(key))}</span>
-    </li>`).join('');
-}
-
-function renderProgressFromMessages(messages) {
-  renderProgress(
-    messages.map((m) => ({ sender_role: m.sender_role, message_text: m.message_text })),
-    (state.evidence && state.evidence.identifiers) || []
-  );
 }
 
 /* --------------------------------------------------------------------------
@@ -2165,7 +2425,6 @@ function animateNumber(el, end, duration = 700) {
 document.addEventListener('i18n:changed', () => {
   // Re-render whatever dynamic panel currently has data, exactly once.
   if (state.evidence) renderEvidence();
-  else renderProgress([], []);
 
   if (state.summary) renderSummary();
   if (state.lastVerdict) renderVerdict(state.lastVerdict);
